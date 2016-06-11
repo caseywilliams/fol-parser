@@ -1,15 +1,15 @@
-import test from 'ava';
-import makeParse from './parser';
+import test from 'ava'
+import makeParse from './parser'
 
-const parse = makeParse();
+const parse = makeParse()
 
 test('Single predicate', t => {
   t.deepEqual(parse('P'), {
     type: 'PREDICATE',
     value: 'P',
     arity: 0
-  });
-});
+  })
+})
 
 test('OR operation', t => {
   t.deepEqual(parse('P | Q'), {
@@ -26,5 +26,5 @@ test('OR operation', t => {
       value: 'Q',
       arity: 0
     }
-  });
-});
+  })
+})
