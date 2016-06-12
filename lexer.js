@@ -32,6 +32,10 @@ class Lexer {
     })
   }
 
+  get done () {
+    return this.length === this.cursor
+  }
+
   skipWhitespace () {
     let c
     while (this.cursor < this.length) {
@@ -77,43 +81,51 @@ class Lexer {
     this.skipWhitespace()
     if (this.cursor >= this.length) return null
     const c = this.source.charAt(this.cursor)
+    const cNext = this.source.charAt(this.cursor + 1)
 
-    // Special case: impl written as '->':
-    if (c === '-') {
-      const peekChar = this.source.charAt(this.cursor + 1)
-      if (peekChar === '>') {
+    if (Lexer.isAlpha(c)) {
+      // Special case: quantifiers written as 'A.' and 'E.':
+      if ((c === 'A' || c === 'E') && cNext === '.') {
         const symbol = {
-          id: 'IMPL',
+          id: (c === 'A' ? 'UNIV' : 'EXIS'),
           type: 'operator',
           pos: this.cursor + 1
         }
         this.cursor += 2
         return symbol
-      }
+      } else return this.processAlpha()
     }
-    const symbol = Lexer.symbols[c]
-    if (symbol !== undefined) {
+
+    // Special case: impl written as '->':
+    if (c === '-' && cNext === '>') {
+      const symbol = {
+        id: 'IMPL',
+        type: 'operator',
+        pos: this.cursor + 1
+      }
+      this.cursor += 2
+      return symbol
+    }
+
+    const id = Lexer.symbols[c]
+    if (typeof id !== 'undefined') {
       return {
-        id: symbol,
+        id,
         type: 'operator',
         pos: (this.cursor++ + 1)
       }
+    } else {
+      throw new Error(`Unrecognized symbol: '${c}' (at ${this.cursor + 1})`)
     }
-    if (Lexer.isAlpha(c)) {
-      return this.processAlpha()
-    }
-    throw new Error(`Unrecognized symbol: '${c}' (at ${this.cursor + 1})`)
   }
 
   lex (input) {
     if (!input) return []
-    let t
     this.source = input
     this.length = input.length
-    this.cursor = 0
     const out = []
-    while (t = this.next()) {
-      out.push(t)
+    while (!this.done) {
+      out.push(this.next())
     }
     this.cursor = 0
     return out

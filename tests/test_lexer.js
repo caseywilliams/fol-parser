@@ -66,7 +66,9 @@ test('Parentheses', t => {
 
 test('Quantifiers', t => {
   t.deepEqual(lexer.lex('∃'), [ operatorOutput('EXIS') ])
+  t.deepEqual(lexer.lex('E.'), [ operatorOutput('EXIS') ])
   t.deepEqual(lexer.lex('∀'), [ operatorOutput('UNIV') ])
+  t.deepEqual(lexer.lex('A.'), [ operatorOutput('UNIV') ])
 })
 
 test('Unrecognized symbols', t => {
