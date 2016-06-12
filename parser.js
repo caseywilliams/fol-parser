@@ -156,7 +156,7 @@ export default function makeParse () {
     const s = symbol(id)
     s.nud = nud || function nud () {
       if (token.id !== 'VARIABLE') {
-        throw new Error(`Expected a variable for quantification Got ${token.id}.`)
+        throw new Error(`Expected a variable for quantification (got ${token.id})`)
       }
       this.arity = 2
       this.first = token

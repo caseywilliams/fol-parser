@@ -166,6 +166,10 @@ test('Function symbol with function arguments', t => {
   })
 })
 
+test('Quantifier without a variable', t => {
+  t.throws(() => parse('E. f(x)'), 'Expected a variable for quantification (got FUNCTION)')
+})
+
 test('Quantified function', t => {
   t.deepEqual(parse('E.x f(x)'), {
     type: 'EXIS',
