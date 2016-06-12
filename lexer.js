@@ -90,7 +90,6 @@ class Lexer {
         this.cursor += 2
         return symbol
       }
-      throw Error('Token error: unexpected \'-\'')
     }
     const symbol = Lexer.symbols[c]
     if (symbol !== undefined) {
@@ -103,10 +102,11 @@ class Lexer {
     if (Lexer.isAlpha(c)) {
       return this.processAlpha()
     }
-    return null
+    throw new Error(`Unrecognized symbol: '${c}' (at ${this.cursor + 1})`)
   }
 
   lex (input) {
+    if (!input) return []
     let t
     this.source = input
     this.length = input.length

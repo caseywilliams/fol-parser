@@ -6,6 +6,10 @@ const operatorOutput = (id, pos = 1) => {
   return { id, type: 'operator', pos }
 }
 
+test('Empty statement', t => {
+  t.deepEqual(lexer.lex(), [])
+})
+
 test('Predicate', t => {
   t.deepEqual(lexer.lex('P'), [{
     id: 'PREDICATE',
@@ -63,4 +67,9 @@ test('Parentheses', t => {
 test('Quantifiers', t => {
   t.deepEqual(lexer.lex('∃'), [ operatorOutput('EXIS') ])
   t.deepEqual(lexer.lex('∀'), [ operatorOutput('UNIV') ])
+})
+
+test('Unrecognized symbols', t => {
+  t.throws(() => lexer.lex('-'), 'Unrecognized symbol: \'-\' (at 1)')
+  t.throws(() => lexer.lex('*'), 'Unrecognized symbol: \'*\' (at 1)')
 })
