@@ -39,6 +39,7 @@ export default function makeParse () {
   }
 
   const expression = function expression (rbp) {
+    if (token.id === 'END') return {}
     const _rbp = rbp || 0
     let t = token
     let left
@@ -67,9 +68,6 @@ export default function makeParse () {
     }
   }
 
-  /**
-   * Creates a symbol given a token ID and a binding power
-   */
   const symbol = function symbol (id, bp) {
     let s = symbolTable[id]
     const _bp = bp || 0
@@ -131,17 +129,21 @@ export default function makeParse () {
       advance()
     }
     advance()
-    if (token.value !== ')') {
+    if (token.type !== 'RPAREN') {
       while (true) {
-        if (token.arity !== 'name') {
-          throw new Error('Expected a parameter name')
+        if ((token.type !== 'VARIABLE') && (token.type !== 'FUNCTION')) {
+          throw new Error('Function parameters should be variables, constants, or other functions')
         }
         a.push(expression())
-        if (token.value !== ',') {
+        if (token.type !== 'COMMA') {
           break
         }
         advance()
       }
+    }
+    this.arity = a.length
+    if (this.arity === 0) {
+      throw new Error('Functions should have at least one argument')
     }
     this.first = a
     advance()
@@ -157,7 +159,7 @@ export default function makeParse () {
         throw new Error(`Expected a variable for quantification Got ${token.id}.`)
       }
       this.arity = 2
-      this.first = token.value
+      this.first = token
       advance()
       this.second = singleExpression()
       return this
@@ -174,7 +176,6 @@ export default function makeParse () {
     tokenCount = 0
     advance()
     const s = expression()
-    advance('END')
     return s
   }
 }
