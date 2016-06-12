@@ -4,10 +4,10 @@
  */
 
 class Lexer {
-  constructor (input) {
-    this.source = input
+  constructor () {
+    this.source = null
     this.cursor = 0
-    this.length = input.length
+    this.length = 0
   }
 
   static isAlpha (c) {
@@ -54,14 +54,14 @@ class Lexer {
         id: 'PREDICATE',
         type: 'name',
         value,
-        pos: this.cursor
+        pos: this.cursor + 1
       }
     } else {
       token = {
         id: null,
         type: 'name',
         value,
-        pos: this.cursor
+        pos: this.cursor + 1
       }
       if (this.source.charAt(end) === '(') {
         token.id = 'FUNCTION'
@@ -85,8 +85,7 @@ class Lexer {
         const symbol = {
           id: 'IMPL',
           type: 'operator',
-          value: '->',
-          pos: this.cursor
+          pos: this.cursor + 1
         }
         this.cursor += 2
         return symbol
@@ -98,8 +97,7 @@ class Lexer {
       return {
         id: symbol,
         type: 'operator',
-        value: c,
-        pos: this.cursor++
+        pos: (this.cursor++ + 1)
       }
     }
     if (Lexer.isAlpha(c)) {
@@ -108,21 +106,19 @@ class Lexer {
     return null
   }
 
-  done () {
-    return !this.source.charAt(this.cursor + 1)
+  lex (input) {
+    let t
+    this.source = input
+    this.length = input.length
+    this.cursor = 0
+    const out = []
+    while (t = this.next()) {
+      out.push(t)
+    }
+    this.cursor = 0
+    return out
   }
 
-  tokenize () {
-    const oldCursor = this.cursor
-    this.cursor = 0
-    const tokens = []
-    let t
-    while (t = this.next()) {
-      tokens.push(t)
-    }
-    this.cursor = oldCursor
-    return tokens
-  }
 }
 
 module.exports = Lexer

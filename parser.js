@@ -30,8 +30,10 @@ export default function makeParse () {
       else throw new Error(`Unknown symbol: ${v}.`)
     }
     token = Object.create(o)
+    if (t.type === 'name') {
+      token.value = v
+    }
     token.type = t.id
-    token.value = v
     token.arity = 0
     return token
   }
@@ -167,8 +169,8 @@ export default function makeParse () {
   quantifier('UNIV')
 
   return function parse (source) {
-    const lexer = new Lexer(source)
-    tokens = lexer.tokenize()
+    const lexer = new Lexer()
+    tokens = lexer.lex(source)
     tokenCount = 0
     advance()
     const s = expression()

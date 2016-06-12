@@ -28,6 +28,7 @@
   },
   "ava": {
     "require": "babel-register",
-    "babel": "inherit"
+    "babel": "inherit",
+    "files": "tests/**/*.js"
   }
 }

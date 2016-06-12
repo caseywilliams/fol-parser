@@ -1,5 +1,5 @@
 import test from 'ava'
-import makeParse from './parser'
+import makeParse from '../parser'
 
 const parse = makeParse()
 
@@ -14,7 +14,6 @@ test('Single predicate', t => {
 test('OR operation', t => {
   t.deepEqual(parse('P | Q'), {
     type: 'OR',
-    value: '|',
     arity: 2,
     first: {
       type: 'PREDICATE',
