@@ -9,7 +9,7 @@ export default function makeParse () {
   const symbolTable = {}
   let token
   let tokens
-  let tokenCount
+  let index
 
   const itself = function itself () { return this }
 
@@ -17,35 +17,33 @@ export default function makeParse () {
     if (id && token.id !== id) {
       throw new Error(`Expected ${id}.`)
     }
-    if (tokenCount >= tokens.length) {
+    if (index >= tokens.length) {
       token = symbolTable.END
       return null
     }
-    const t = tokens[tokenCount]
-    tokenCount += 1
-    const v = t.value
-    const o = symbolTable[t.id]
-    if (!o) {
+    const t = tokens[index]
+    index += 1
+    const symbol = symbolTable[t.id]
+    if (!symbol) {
       if (t.type === 'operator') throw new Error('Unknown operator.')
-      else throw new Error(`Unknown symbol: ${v}.`)
+      else throw new Error(`Unknown symbol: ${t.value}.`)
     }
-    token = Object.create(o)
+    token = Object.create(symbol)
     if (t.type === 'name') {
-      token.value = v
+      token.value = t.value
     }
     token.type = t.id
     token.arity = 0
     return token
   }
 
-  const expression = function expression (rbp) {
+  const expression = function expression (rbp = 0) {
     if (token.id === 'END') return {}
-    const _rbp = rbp || 0
     let t = token
     let left
     advance()
     left = t.nud()
-    while (_rbp < token.lbp) {
+    while (rbp < token.lbp) {
       t = token
       advance()
       left = t.led(left)
@@ -68,18 +66,17 @@ export default function makeParse () {
     }
   }
 
-  const symbol = function symbol (id, bp) {
+  const symbol = function symbol (id, bp = 0) {
     let s = symbolTable[id]
-    const _bp = bp || 0
     if (s) {
-      if (_bp >= s.lbp) {
-        s.lbp = _bp
+      if (bp >= s.lbp) {
+        s.lbp = bp
       }
     } else {
       s = Object.create(protoSymbol)
       s.id = id
       s.value = null
-      s.lbp = _bp
+      s.lbp = bp
       symbolTable[id] = s
     }
     return s
@@ -173,9 +170,8 @@ export default function makeParse () {
   return function parse (source) {
     const lexer = new Lexer()
     tokens = lexer.lex(source)
-    tokenCount = 0
+    index = 0
     advance()
-    const s = expression()
-    return s
+    return expression()
   }
 }
