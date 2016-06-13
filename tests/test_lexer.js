@@ -19,6 +19,20 @@ test('Predicate', t => {
   }])
 })
 
+test('Multi-character predicate names', t => {
+  t.deepEqual(lexer.lex('Red | Blue'), [{
+    id: 'PREDICATE',
+    type: 'name',
+    value: 'Red',
+    pos: 1
+  }, operatorOutput('OR', 5), {
+    id: 'PREDICATE',
+    type: 'name',
+    value: 'Blue',
+    pos: 7
+  }])
+})
+
 test('Binary operations', t => {
   t.deepEqual(lexer.lex('∨'), [ operatorOutput('OR') ])
   t.deepEqual(lexer.lex('|'), [ operatorOutput('OR') ])

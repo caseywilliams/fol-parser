@@ -15,7 +15,7 @@ export default function makeParse () {
 
   const advance = function advance (id) {
     if (id && token.id !== id) {
-      throw new Error(`Expected ${id}.`)
+      throw new Error(`Expected ${id} (got ${token.id}).`)
     }
     if (index >= tokens.length) {
       token = symbolTable.END
@@ -83,10 +83,28 @@ export default function makeParse () {
   }
 
   symbol('END')
-  symbol('PREDICATE').nud = itself
-  symbol('VARIABLE').nud = itself
   symbol('RPAREN')
   symbol('COMMA')
+  symbol('VARIABLE').nud = itself
+  symbol('PREDICATE').nud = function () {
+    const a = []
+    if (token.id === 'LPAREN') {
+      advance()
+      while (true) {
+        if ((token.type !== 'VARIABLE') && (token.type !== 'FUNCTION')) {
+          throw new Error('Function parameters should be variables, constants, or other functions')
+        }
+        a.push(expression())
+        if (token.type !== 'COMMA') break
+        advance()
+      }
+    }
+    if (a.length) {
+      this.first = a
+      this.arity = a.length
+    }
+    return this
+  }
 
   const infix = function infix (id, bp, led) {
     const s = symbol(id, bp)
@@ -120,28 +138,22 @@ export default function makeParse () {
   })
 
   prefix('FUNCTION', function func () {
+    advance('LPAREN')
     const a = []
-    if (token.id === 'name') {
-      this.name = token.value
-      advance()
-    }
-    advance()
     if (token.type !== 'RPAREN') {
       while (true) {
         if ((token.type !== 'VARIABLE') && (token.type !== 'FUNCTION')) {
           throw new Error('Function parameters should be variables, constants, or other functions')
         }
         a.push(expression())
-        if (token.type !== 'COMMA') {
-          break
-        }
+        if (token.type !== 'COMMA') break
         advance()
       }
     }
-    this.arity = a.length
-    if (this.arity === 0) {
+    if (a.length === 0) {
       throw new Error('Functions should have at least one argument')
     }
+    this.arity = a.length
     this.first = a
     advance()
     return this

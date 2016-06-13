@@ -15,6 +15,23 @@ test('Single predicate', t => {
   })
 })
 
+test('Predicate with arguments', t => {
+  t.deepEqual(parse('P(x, y)'), {
+    type: 'PREDICATE',
+    value: 'P',
+    arity: 2,
+    first: [{
+      type: 'VARIABLE',
+      value: 'x',
+      arity: 0
+    }, {
+      type: 'VARIABLE',
+      value: 'y',
+      arity: 0
+    }]
+  })
+})
+
 test('Single variable or constant', t => {
   t.deepEqual(parse('c'), {
     type: 'VARIABLE',
