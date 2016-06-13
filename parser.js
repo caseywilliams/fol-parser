@@ -85,6 +85,8 @@ export default function makeParse () {
   symbol('END')
   symbol('RPAREN')
   symbol('COMMA')
+  symbol('TRUE').nud = itself
+  symbol('FALSE').nud = itself
   symbol('VARIABLE').nud = itself
   symbol('PREDICATE').nud = function () {
     const a = []

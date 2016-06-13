@@ -14,6 +14,10 @@ class Lexer {
     return /[A-Za-z]/.test(c)
   }
 
+  static isNumeric (c) {
+    return /[0-9]/.test(c)
+  }
+
   static get symbols () {
     return Object.freeze({
       '&': 'AND',
@@ -28,7 +32,11 @@ class Lexer {
       '∀': 'UNIV',
       '!': 'NOT',
       '¬': 'NOT',
-      '~': 'NOT'
+      '~': 'NOT',
+      '1': 'TRUE',
+      '⊤': 'TRUE',
+      '0': 'FALSE',
+      '⊥': 'FALSE'
     })
   }
 
@@ -53,7 +61,19 @@ class Lexer {
       end++
     }
     const value = this.source.substring(this.cursor, end)
-    if (value[0] === value[0].toUpperCase()) {
+    if (value.toLowerCase() === 'true') {
+      token = {
+        id: 'TRUE',
+        type: 'boolean',
+        pos: this.cursor + 1
+      }
+    } else if (value.toLowerCase() === 'false') {
+      token = {
+        id: 'FALSE',
+        type: 'boolean',
+        pos: this.cursor + 1
+      }
+    } else if (value[0] === value[0].toUpperCase()) {
       token = {
         id: 'PREDICATE',
         type: 'name',
@@ -77,11 +97,29 @@ class Lexer {
     return token
   }
 
+  processBoolean () {
+    const c = this.source.charAt(this.cursor)
+    let id = 'TRUE'
+    if (c === '⊥') id = 'FALSE'
+    if (Lexer.isNumeric(c) && (c < 1)) id = 'FALSE'
+    let symbol = {
+      id,
+      type: 'boolean',
+      pos: this.cursor + 1
+    }
+    this.cursor++
+    return symbol
+  }
+
   next () {
     this.skipWhitespace()
     if (this.cursor >= this.length) return null
     const c = this.source.charAt(this.cursor)
     const cNext = this.source.charAt(this.cursor + 1)
+
+    if (Lexer.isNumeric(c) || c === '⊤' || c === '⊥') {
+      return this.processBoolean()
+    }
 
     if (Lexer.isAlpha(c)) {
       // Special case: quantifiers written as 'A.' and 'E.':

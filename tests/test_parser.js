@@ -40,6 +40,21 @@ test('Single variable or constant', t => {
   })
 })
 
+test('Boolean values', t => {
+  t.deepEqual(parse('True | False'), {
+    type: 'OR',
+    arity: 2,
+    first: {
+      type: 'TRUE',
+      arity: 0
+    },
+    second: {
+      type: 'FALSE',
+      arity: 0
+    }
+  })
+})
+
 test('Default binary operation', t => {
   t.deepEqual(parse('P | Q'), {
     type: 'OR',

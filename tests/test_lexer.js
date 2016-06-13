@@ -2,8 +2,16 @@ import test from 'ava'
 import Lexer from '../lexer'
 
 const lexer = new Lexer()
+
 const operatorOutput = (id, pos = 1) => {
   return { id, type: 'operator', pos }
+}
+const booleanOutput = (truthy = 1, pos = 1) => {
+  return {
+    id: (truthy ? 'TRUE' : 'FALSE'),
+    type: 'boolean',
+    pos
+  }
 }
 
 test('Empty statement', t => {
@@ -17,6 +25,15 @@ test('Predicate', t => {
     value: 'P',
     pos: 1
   }])
+})
+
+test('Boolean values', t => {
+  t.deepEqual(lexer.lex('⊤'), [ booleanOutput() ])
+  t.deepEqual(lexer.lex('1'), [ booleanOutput() ])
+  t.deepEqual(lexer.lex('True'), [ booleanOutput() ])
+  t.deepEqual(lexer.lex('⊥'), [ booleanOutput(0) ])
+  t.deepEqual(lexer.lex('0'), [ booleanOutput(0) ])
+  t.deepEqual(lexer.lex('False'), [ booleanOutput(0) ])
 })
 
 test('Multi-character predicate names', t => {
