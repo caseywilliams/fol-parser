@@ -9,155 +9,198 @@ test('Empty input', t => {
 
 test('Single predicate', t => {
   t.deepEqual(parse('P'), {
-    type: 'PREDICATE',
-    value: 'P',
-    arity: 0
+    type: 'Predicate',
+    name: 'P',
+    start: 0,
+    end: 1,
+    arguments: []
   })
 })
 
 test('Predicate with arguments', t => {
   t.deepEqual(parse('P(x, y)'), {
-    type: 'PREDICATE',
-    value: 'P',
-    arity: 2,
-    first: [{
-      type: 'VARIABLE',
-      value: 'x',
-      arity: 0
+    type: 'Predicate',
+    name: 'P',
+    start: 0,
+    end: 1,
+    arguments: [{
+      type: 'VariableOrConstant',
+      name: 'x',
+      start: 2,
+      end: 3
     }, {
-      type: 'VARIABLE',
-      value: 'y',
-      arity: 0
+      type: 'VariableOrConstant',
+      name: 'y',
+      start: 5,
+      end: 6
     }]
   })
 })
 
 test('Single variable or constant', t => {
   t.deepEqual(parse('c'), {
-    type: 'VARIABLE',
-    value: 'c',
-    arity: 0
+    type: 'VariableOrConstant',
+    name: 'c',
+    start: 0,
+    end: 1
   })
 })
 
 test('Boolean values', t => {
-  t.deepEqual(parse('True | False'), {
-    type: 'OR',
-    arity: 2,
-    first: {
-      type: 'TRUE',
-      arity: 0
-    },
-    second: {
-      type: 'FALSE',
-      arity: 0
-    }
+  t.deepEqual(parse('True'), {
+    type: 'Literal',
+    value: true,
+    start: 0,
+    end: 4
+  })
+  t.deepEqual(parse('False'), {
+    type: 'Literal',
+    value: true,
+    start: 0,
+    end: 5
   })
 })
 
 test('Default binary operation', t => {
   t.deepEqual(parse('P | Q'), {
-    type: 'OR',
-    arity: 2,
-    first: {
-      type: 'PREDICATE',
-      value: 'P',
-      arity: 0
+    type: 'BinaryExpression',
+    operator: 'Or',
+    start: 0,
+    end: 5,
+    left: {
+      type: 'Predicate',
+      name: 'P',
+      start: 0,
+      end: 1,
+      arguments: []
     },
-    second: {
-      type: 'PREDICATE',
-      value: 'Q',
-      arity: 0
+    right: {
+      type: 'Predicate',
+      name: 'Q',
+      start: 4,
+      end: 5,
+      arguments: []
     }
   })
 })
 
 test('Negation', t => {
-  t.deepEqual(parse('!(P & Q)'), {
-    type: 'NOT',
-    arity: 1,
-    first: {
-      type: 'AND',
-      arity: 2,
-      first: {
-        type: 'PREDICATE',
-        value: 'P',
-        arity: 0
-      },
-      second: {
-        type: 'PREDICATE',
-        value: 'Q',
-        arity: 0
-      }
+  t.deepEqual(parse('!P'), {
+    type: 'UnaryExpression',
+    operator: 'Not',
+    start: 0,
+    end: 2,
+    argument: {
+      type: 'Predicate',
+      name: 'P',
+      start: 1,
+      end: 2,
+      arguments: []
     }
   })
 })
 
-test('Parentheses', t => {
+test('Expression statement', t => {
   t.deepEqual(parse('(P | Q)'), {
-    type: 'OR',
-    arity: 2,
-    first: {
-      type: 'PREDICATE',
-      value: 'P',
-      arity: 0
-    },
-    second: {
-      type: 'PREDICATE',
-      value: 'Q',
-      arity: 0
+    type: 'ExpressionStatement',
+    start: 0,
+    end: 7,
+    expression: {
+      type: 'BinaryExpression',
+      operator: 'Or',
+      start: 1,
+      end: 6,
+      left: {
+        type: 'Predicate',
+        name: 'P',
+        start: 1,
+        end: 2,
+        arguments: []
+      },
+      right: {
+        type: 'Predicate',
+        name: 'Q',
+        start: 5,
+        end: 6,
+        arguments: []
+      }
     }
   })
 })
 
 test('Precedence of and/or is greater than impl', t => {
   t.deepEqual(parse('P -> Q & R'), {
-    type: 'IMPL',
-    arity: 2,
-    first: {
-      type: 'PREDICATE',
-      value: 'P',
-      arity: 0
+    type: 'BinaryExpression',
+    operator: 'Implication',
+    start: 0,
+    end: 10,
+    left: {
+      type: 'Predicate',
+      name: 'P',
+      start: 0,
+      end: 1,
+      arguments: []
     },
-    second: {
-      type: 'AND',
-      arity: 2,
-      first: {
-        type: 'PREDICATE',
-        value: 'Q',
-        arity: 0
+    right: {
+      type: 'BinaryExpression',
+      operator: 'And',
+      start: 5,
+      end: 10,
+      left: {
+        type: 'Predicate',
+        name: 'Q',
+        start: 5,
+        end: 6,
+        arguments: []
       },
-      second: {
-        type: 'PREDICATE',
-        value: 'R',
-        arity: 0
+      right: {
+        type: 'Predicate',
+        name: 'R',
+        start: 9,
+        end: 10,
+        arguments: []
       }
     }
   })
 })
 
-test('Parentheses can override default operator precedence', t => {
+test('Parentheses override default operator precedence', t => {
   t.deepEqual(parse('(P -> Q) & R'), {
-    type: 'AND',
-    arity: 2,
-    first: {
-      type: 'IMPL',
-      arity: 2,
-      first: {
-        type: 'PREDICATE',
-        value: 'P',
-        arity: 0
-      },
-      second: {
-        type: 'PREDICATE',
-        value: 'Q',
-        arity: 0
+    type: 'BinaryExpression',
+    operator: 'And',
+    start: 0,
+    end: 12,
+    left: {
+      type: 'ExpressionStatement',
+      start: 0,
+      end: 8,
+      expression: {
+        type: 'BinaryExpression',
+        operator: 'Implication',
+        start: 1,
+        end: 7,
+        left: {
+          type: 'Predicate',
+          name: 'P',
+          start: 1,
+          end: 2,
+          arguments: []
+        },
+        right: {
+          type: 'Predicate',
+          name: 'Q',
+          start: 6,
+          end: 7,
+          arguments: []
+        }
       }
     },
-    second: {
-      type: 'PREDICATE',
-      value: 'R',
-      arity: 0
+    right: {
+      type: 'Predicate',
+      name: 'R',
+      start: 11,
+      end: 12,
+      arguments: []
     }
 
   })
@@ -173,73 +216,86 @@ test('Error: function with inappropriate argument types', t => {
 
 test('Function symbol with single argument', t => {
   t.deepEqual(parse('f(x)'), {
-    type: 'FUNCTION',
-    value: 'f',
-    arity: 1,
-    first: [{
-      type: 'VARIABLE',
-      value: 'x',
-      arity: 0
+    type: 'FunctionExpression',
+    name: 'f',
+    start: 0,
+    end: 4,
+    arguments: [{
+      type: 'VariableOrConstant',
+      name: 'x',
+      start: 2,
+      end: 3
     }]
   })
 })
 
 test('Function symbol with multiple arguments', t => {
   t.deepEqual(parse('f(x, y)'), {
-    type: 'FUNCTION',
-    value: 'f',
-    arity: 2,
-    first: [{
-      type: 'VARIABLE',
-      value: 'x',
-      arity: 0
+    type: 'FunctionExpression',
+    name: 'f',
+    start: 0,
+    end: 7,
+    arguments: [{
+      type: 'VariableOrConstant',
+      name: 'x',
+      start: 2,
+      end: 3
     }, {
-      type: 'VARIABLE',
-      value: 'y',
-      arity: 0
+      type: 'VariableOrConstant',
+      name: 'y',
+      start: 5,
+      end: 6
     }]
   })
 })
 
 test('Function symbol with function arguments', t => {
   t.deepEqual(parse('f(g(x))'), {
-    type: 'FUNCTION',
-    value: 'f',
-    arity: 1,
-    first: [{
-      type: 'FUNCTION',
-      value: 'g',
-      arity: 1,
-      first: [{
-        type: 'VARIABLE',
-        value: 'x',
-        arity: 0
+    type: 'FunctionExpression',
+    name: 'f',
+    start: 0,
+    end: 7,
+    arguments: [{
+      type: 'FunctionExpression',
+      name: 'g',
+      start: 2,
+      end: 6,
+      arguments: [{
+        type: 'VariableOrConstant',
+        name: 'x',
+        start: 4,
+        end: 5
       }]
     }]
   })
 })
 
 test('Quantifier without a variable', t => {
-  t.throws(() => parse('E. f(x)'), 'Expected a variable for quantification (got FUNCTION)')
+  t.throws(() => parse('E. f(x)'), 'Expected a variable for quantification (got FunctionExpression)')
 })
 
 test('Quantified function', t => {
   t.deepEqual(parse('E.x f(x)'), {
-    type: 'EXIS',
-    arity: 2,
-    first: {
-      type: 'VARIABLE',
-      value: 'x',
-      arity: 0
+    type: 'QuantifiedExpression',
+    quantifier: 'Existential',
+    start: 0,
+    end: 8,
+    variable: {
+      type: 'VariableOrConstant',
+      name: 'x',
+      start: 2,
+      end: 3
     },
-    second: {
-      type: 'FUNCTION',
-      value: 'f',
-      arity: 1,
-      first: [{
-        type: 'VARIABLE',
-        value: 'x',
-        arity: 0
+    expression: {
+      type: 'FunctionExpression',
+      name: 'f',
+      start: 4,
+      end: 8,
+      arguments: [{
+        type: 'VariableOrConstant',
+        name: 'x',
+        start: 6,
+        end: 7
       }]
     }
 
@@ -247,39 +303,39 @@ test('Quantified function', t => {
 })
 
 test('Quantified expression', t => {
-  t.deepEqual(parse('A.x (f(x) -> P | Q)'), {
-    type: 'UNIV',
-    arity: 2,
-    first: {
-      type: 'VARIABLE',
-      value: 'x',
-      arity: 0
+  t.deepEqual(parse('A.x (P -> Q)'), {
+    type: 'QuantifiedExpression',
+    quantifier: 'Universal',
+    start: 0,
+    end: 12,
+    variable: {
+      type: 'VariableOrConstant',
+      name: 'x',
+      start: 2,
+      end: 3
     },
-    second: {
-      type: 'IMPL',
-      arity: 2,
-      first: {
-        type: 'FUNCTION',
-        value: 'f',
-        arity: 1,
-        first: [{
-          type: 'VARIABLE',
-          value: 'x',
-          arity: 0
-        }]
-      },
-      second: {
-        type: 'OR',
-        arity: 2,
-        first: {
-          type: 'PREDICATE',
-          value: 'P',
-          arity: 0
+    expression: {
+      type: 'ExpressionStatement',
+      start: 4,
+      end: 12,
+      expression: {
+        type: 'BinaryExpression',
+        operator: 'Implication',
+        start: 5,
+        end: 11,
+        left: {
+          type: 'Predicate',
+          name: 'P',
+          start: 5,
+          end: 6,
+          arguments: []
         },
-        second: {
-          type: 'PREDICATE',
-          value: 'Q',
-          arity: 0
+        right: {
+          type: 'Predicate',
+          name: 'Q',
+          start: 10,
+          end: 11,
+          arguments: []
         }
       }
     }
@@ -288,35 +344,44 @@ test('Quantified expression', t => {
 
 test('Quantifier scope isn\'t too greedy', t => {
   t.deepEqual(parse('E.x f(x) | g(x)'), {
-    type: 'OR',
-    arity: 2,
-    first: {
-      type: 'EXIS',
-      arity: 2,
-      first: {
-        type: 'VARIABLE',
-        value: 'x',
-        arity: 0
+    type: 'BinaryExpression',
+    operator: 'Or',
+    start: 0,
+    end: 15,
+    left: {
+      type: 'QuantifiedExpression',
+      quantifier: 'Existential',
+      start: 0,
+      end: 8,
+      variable: {
+        type: 'VariableOrConstant',
+        name: 'x',
+        start: 2,
+        end: 3
       },
-      second: {
-        type: 'FUNCTION',
-        value: 'f',
-        arity: 1,
-        first: [{
-          type: 'VARIABLE',
-          value: 'x',
-          arity: 0
+      expression: {
+        type: 'FunctionExpression',
+        name: 'f',
+        start: 4,
+        end: 8,
+        arguments: [{
+          type: 'VariableOrConstant',
+          name: 'x',
+          start: 6,
+          end: 7
         }]
       }
     },
-    second: {
-      type: 'FUNCTION',
-      value: 'g',
-      arity: 1,
-      first: [{
-        type: 'VARIABLE',
-        value: 'x',
-        arity: 0
+    right: {
+      type: 'FunctionExpression',
+      name: 'g',
+      start: 11,
+      end: 15,
+      arguments: [{
+        type: 'VariableOrConstant',
+        name: 'x',
+        start: 13,
+        end: 14
       }]
     }
   })

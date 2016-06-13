@@ -18,7 +18,7 @@ export default function makeParse () {
       throw new Error(`Expected ${id} (got ${token.id}).`)
     }
     if (index >= tokens.length) {
-      token = symbolTable.END
+      token = symbolTable.End
       return null
     }
     const t = tokens[index]
@@ -30,15 +30,16 @@ export default function makeParse () {
     }
     token = Object.create(symbol)
     if (t.type === 'name') {
-      token.value = t.value
+      token.name = t.value
     }
+    token.start = t.start
+    token.end = t.end
     token.type = t.id
-    token.arity = 0
     return token
   }
 
   const expression = function expression (rbp = 0) {
-    if (token.id === 'END') return {}
+    if (token.id === 'End') return {}
     let t = token
     let left
     advance()
@@ -75,111 +76,128 @@ export default function makeParse () {
     } else {
       s = Object.create(protoSymbol)
       s.id = id
-      s.value = null
       s.lbp = bp
       symbolTable[id] = s
     }
     return s
   }
 
-  symbol('END')
-  symbol('RPAREN')
-  symbol('COMMA')
-  symbol('TRUE').nud = itself
-  symbol('FALSE').nud = itself
-  symbol('VARIABLE').nud = itself
-  symbol('PREDICATE').nud = function () {
+  symbol('End')
+  symbol('RightParen')
+  symbol('Comma')
+  symbol('VariableOrConstant').nud = itself
+  symbol('True').nud = function () {
+    this.type = 'Literal'
+    this.value = true
+    return this
+  }
+  symbol('False').nud = function () {
+    this.type = 'Literal'
+    this.value = true
+    return this
+  }
+  symbol('Predicate').nud = function () {
     const a = []
-    if (token.id === 'LPAREN') {
+    if (token.id === 'LeftParen') {
       advance()
       while (true) {
-        if ((token.type !== 'VARIABLE') && (token.type !== 'FUNCTION')) {
+        if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
           throw new Error('Function parameters should be variables, constants, or other functions')
         }
         a.push(expression())
-        if (token.type !== 'COMMA') break
+        if (token.type !== 'Comma') break
         advance()
       }
     }
-    if (a.length) {
-      this.first = a
-      this.arity = a.length
-    }
+    this.arguments = a
     return this
   }
 
   const infix = function infix (id, bp, led) {
     const s = symbol(id, bp)
     s.led = led || function led (left) {
-      this.first = left
-      this.second = expression(bp - 1)
-      this.arity = 2
+      this.type = 'BinaryExpression'
+      this.operator = id
+      this.left = left
+      this.right = expression(bp - 1)
+      this.start = this.left.start
+      this.end = this.right.end
       return this
     }
     return s
   }
 
-  infix('OR', 50)
-  infix('AND', 50)
-  infix('IMPL', 40)
+  infix('Or', 50)
+  infix('And', 50)
+  infix('Implication', 40)
 
   const prefix = function prefix (id, nud) {
     const s = symbol(id)
     s.nud = nud || function nud () {
-      this.first = expression(70)
-      this.arity = 1
+      this.type = 'UnaryExpression'
+      this.operator = id
+      this.argument = expression(70)
+      this.end = this.argument.end
       return this
     }
     return s
   }
 
-  prefix('LPAREN', () => {
+  prefix('LeftParen', function nud () {
+    this.type = 'ExpressionStatement'
     const e = expression()
-    advance('RPAREN')
-    return e
+    advance('RightParen')
+    this.end = e.end + 1
+    this.expression = e
+    return this
   })
 
-  prefix('FUNCTION', function func () {
-    advance('LPAREN')
+  prefix('FunctionExpression', function nud () {
+    advance('LeftParen')
     const a = []
-    if (token.type !== 'RPAREN') {
+    let e
+    this.end = this.start
+    if (token.id !== 'RightParen') {
       while (true) {
-        if ((token.type !== 'VARIABLE') && (token.type !== 'FUNCTION')) {
+        if ((token.id !== 'VariableOrConstant') && (token.id !== 'FunctionExpression')) {
           throw new Error('Function parameters should be variables, constants, or other functions')
         }
-        a.push(expression())
-        if (token.type !== 'COMMA') break
+        e = expression()
+        this.end = e.end
+        a.push(e)
+        if (token.id !== 'Comma') break
         advance()
       }
     }
     if (a.length === 0) {
       throw new Error('Functions should have at least one argument')
     }
-    this.arity = a.length
-    this.first = a
-    advance()
+    this.arguments = a
+    advance('RightParen')
+    this.end++
     return this
   })
 
-  prefix('NOT')
+  prefix('Not')
 
   const quantifier = function quantifier (id, nud) {
     const s = symbol(id)
     s.nud = nud || function nud () {
-      if (token.id !== 'VARIABLE') {
+      this.type = 'QuantifiedExpression'
+      this.quantifier = id
+      if (token.id !== 'VariableOrConstant') {
         throw new Error(`Expected a variable for quantification (got ${token.id})`)
       }
-      this.arity = 2
-      this.first = token
-      advance()
-      this.second = singleExpression()
+      this.variable = singleExpression()
+      this.expression = singleExpression()
+      this.end = this.expression.end
       return this
     }
     return s
   }
 
-  quantifier('EXIS')
-  quantifier('UNIV')
+  quantifier('Existential')
+  quantifier('Universal')
 
   return function parse (source) {
     const lexer = new Lexer()

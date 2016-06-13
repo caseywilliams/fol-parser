@@ -20,23 +20,23 @@ class Lexer {
 
   static get symbols () {
     return Object.freeze({
-      '&': 'AND',
-      '∧': 'AND',
-      '|': 'OR',
-      '∨': 'OR',
-      '→': 'IMPL',
-      '(': 'LPAREN',
-      ')': 'RPAREN',
-      ',': 'COMMA',
-      '∃': 'EXIS',
-      '∀': 'UNIV',
-      '!': 'NOT',
-      '¬': 'NOT',
-      '~': 'NOT',
-      '1': 'TRUE',
-      '⊤': 'TRUE',
-      '0': 'FALSE',
-      '⊥': 'FALSE'
+      '&': 'And',
+      '∧': 'And',
+      '|': 'Or',
+      '∨': 'Or',
+      '→': 'Implication',
+      '(': 'LeftParen',
+      ')': 'RightParen',
+      ',': 'Comma',
+      '∃': 'Existential',
+      '∀': 'Universal',
+      '!': 'Not',
+      '¬': 'Not',
+      '~': 'Not',
+      '1': 'True',
+      '⊤': 'True',
+      '0': 'False',
+      '⊥': 'False'
     })
   }
 
@@ -63,34 +63,38 @@ class Lexer {
     const value = this.source.substring(this.cursor, end)
     if (value.toLowerCase() === 'true') {
       token = {
-        id: 'TRUE',
+        id: 'True',
         type: 'boolean',
-        pos: this.cursor + 1
+        start: this.cursor,
+        end: this.cursor + value.length
       }
     } else if (value.toLowerCase() === 'false') {
       token = {
-        id: 'FALSE',
+        id: 'False',
         type: 'boolean',
-        pos: this.cursor + 1
+        start: this.cursor,
+        end: this.cursor + value.length
       }
     } else if (value[0] === value[0].toUpperCase()) {
       token = {
-        id: 'PREDICATE',
+        id: 'Predicate',
         type: 'name',
         value,
-        pos: this.cursor + 1
+        start: this.cursor,
+        end
       }
     } else {
       token = {
         id: null,
         type: 'name',
         value,
-        pos: this.cursor + 1
+        start: this.cursor,
+        end
       }
       if (this.source.charAt(end) === '(') {
-        token.id = 'FUNCTION'
+        token.id = 'FunctionExpression'
       } else {
-        token.id = 'VARIABLE'
+        token.id = 'VariableOrConstant'
       }
     }
     this.cursor = end
@@ -99,13 +103,14 @@ class Lexer {
 
   processBoolean () {
     const c = this.source.charAt(this.cursor)
-    let id = 'TRUE'
-    if (c === '⊥') id = 'FALSE'
-    if (Lexer.isNumeric(c) && (c < 1)) id = 'FALSE'
+    let id = 'True'
+    if (c === '⊥') id = 'False'
+    if (Lexer.isNumeric(c) && (c < 1)) id = 'False'
     let symbol = {
       id,
       type: 'boolean',
-      pos: this.cursor + 1
+      start: this.cursor,
+      end: this.cursor + 1
     }
     this.cursor++
     return symbol
@@ -125,9 +130,10 @@ class Lexer {
       // Special case: quantifiers written as 'A.' and 'E.':
       if ((c === 'A' || c === 'E') && cNext === '.') {
         const symbol = {
-          id: (c === 'A' ? 'UNIV' : 'EXIS'),
+          id: (c === 'A' ? 'Universal' : 'Existential'),
           type: 'operator',
-          pos: this.cursor + 1
+          start: this.cursor,
+          end: this.cursor + 2
         }
         this.cursor += 2
         return symbol
@@ -137,9 +143,10 @@ class Lexer {
     // Special case: impl written as '->':
     if (c === '-' && cNext === '>') {
       const symbol = {
-        id: 'IMPL',
+        id: 'Implication',
         type: 'operator',
-        pos: this.cursor + 1
+        start: this.cursor,
+        end: this.cursor + 2
       }
       this.cursor += 2
       return symbol
@@ -147,11 +154,14 @@ class Lexer {
 
     const id = Lexer.symbols[c]
     if (typeof id !== 'undefined') {
-      return {
+      const symbol = {
         id,
         type: 'operator',
-        pos: (this.cursor++ + 1)
+        start: this.cursor,
+        end: this.cursor + 1
       }
+      this.cursor++
+      return symbol
     } else {
       throw new Error(`Unrecognized symbol: '${c}' (at ${this.cursor + 1})`)
     }
