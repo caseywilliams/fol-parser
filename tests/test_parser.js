@@ -72,6 +72,27 @@ test('Default binary operation', t => {
   })
 })
 
+test('Negation', t => {
+  t.deepEqual(parse('!(P & Q)'), {
+    type: 'NOT',
+    arity: 1,
+    first: {
+      type: 'AND',
+      arity: 2,
+      first: {
+        type: 'PREDICATE',
+        value: 'P',
+        arity: 0
+      },
+      second: {
+        type: 'PREDICATE',
+        value: 'Q',
+        arity: 0
+      }
+    }
+  })
+})
+
 test('Parentheses', t => {
   t.deepEqual(parse('(P | Q)'), {
     type: 'OR',
