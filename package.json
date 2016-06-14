@@ -4,9 +4,14 @@
   "description": "A first-order logic parser in Javascript",
   "main": "parser.js",
   "scripts": {
-    "test": "ava"
+    "test": "ava",
+    "lint": "standard"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+     "url": "https://github.com/caseywilliams/fol-parser"
+  },
+  "author": "Casey Williams",
   "license": "MIT",
   "devDependencies": {
     "ava": "^0.15.2",

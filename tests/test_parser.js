@@ -1,7 +1,7 @@
 import test from 'ava'
-import makeParse from '../parser'
+import Parser from '../parser'
 
-const parse = makeParse()
+const parse = new Parser()
 
 test('Empty input', t => {
   t.deepEqual(parse(''), {})

@@ -5,76 +5,29 @@
 
 import Lexer from './lexer'
 
-export default function makeParse () {
+export default function Parser () {
   const symbolTable = {}
   let token
   let tokens
   let index
 
-  const itself = function itself () { return this }
-
-  const advance = function advance (id) {
-    if (id && token.id !== id) {
-      throw new Error(`Expected ${id} (got ${token.id}).`)
-    }
-    if (index >= tokens.length) {
-      token = symbolTable.End
-      return null
-    }
-    const t = tokens[index]
-    index += 1
-    const symbol = symbolTable[t.id]
-    if (!symbol) {
-      if (t.type === 'operator') throw new Error('Unknown operator.')
-      else throw new Error(`Unknown symbol: ${t.value}.`)
-    }
-    token = Object.create(symbol)
-    if (t.type === 'name') {
-      token.name = t.value
-    }
-    token.start = t.start
-    token.end = t.end
-    token.type = t.id
-    return token
-  }
-
-  const expression = function expression (rbp = 0) {
-    if (token.id === 'End') return {}
-    let t = token
-    let left
-    advance()
-    left = t.nud()
-    while (rbp < token.lbp) {
-      t = token
-      advance()
-      left = t.led(left)
-    }
-    return left
-  }
-
-  const singleExpression = function singleExpression () {
-    const t = token
-    advance()
-    return t.nud()
-  }
-
-  const protoSymbol = {
-    nud: () => {
+  const baseSymbol = {
+    nud () {
       throw new Error('Undefined.')
     },
-    led: () => {
+    led () {
       throw new Error('Missing operator.')
     }
   }
 
-  const symbol = function symbol (id, bp = 0) {
+  const createSymbol = function createSymbol (id, bp = 0) {
     let s = symbolTable[id]
     if (s) {
       if (bp >= s.lbp) {
         s.lbp = bp
       }
     } else {
-      s = Object.create(protoSymbol)
+      s = Object.create(baseSymbol)
       s.id = id
       s.lbp = bp
       symbolTable[id] = s
@@ -82,21 +35,29 @@ export default function makeParse () {
     return s
   }
 
-  symbol('End')
-  symbol('RightParen')
-  symbol('Comma')
-  symbol('VariableOrConstant').nud = itself
-  symbol('True').nud = function () {
+  createSymbol('End')
+
+  createSymbol('RightParen')
+
+  createSymbol('Comma')
+
+  createSymbol('VariableOrConstant').nud = function nud () {
+    return this
+  }
+
+  createSymbol('True').nud = function nud () {
     this.type = 'Literal'
     this.value = true
     return this
   }
-  symbol('False').nud = function () {
+
+  createSymbol('False').nud = function nud () {
     this.type = 'Literal'
     this.value = true
     return this
   }
-  symbol('Predicate').nud = function () {
+
+  createSymbol('Predicate').nud = function nud () {
     const a = []
     if (token.id === 'LeftParen') {
       advance()
@@ -113,8 +74,8 @@ export default function makeParse () {
     return this
   }
 
-  const infix = function infix (id, bp, led) {
-    const s = symbol(id, bp)
+  const createInfix = function createInfix (id, bp, led) {
+    const s = createSymbol(id, bp)
     s.led = led || function led (left) {
       this.type = 'BinaryExpression'
       this.operator = id
@@ -127,12 +88,14 @@ export default function makeParse () {
     return s
   }
 
-  infix('Or', 50)
-  infix('And', 50)
-  infix('Implication', 40)
+  createInfix('Or', 50)
 
-  const prefix = function prefix (id, nud) {
-    const s = symbol(id)
+  createInfix('And', 50)
+
+  createInfix('Implication', 40)
+
+  const createPrefix = function createPrefix (id, nud) {
+    const s = createSymbol(id)
     s.nud = nud || function nud () {
       this.type = 'UnaryExpression'
       this.operator = id
@@ -143,7 +106,9 @@ export default function makeParse () {
     return s
   }
 
-  prefix('LeftParen', function nud () {
+  createPrefix('Not')
+
+  createPrefix('LeftParen', function nud () {
     this.type = 'ExpressionStatement'
     const e = expression()
     advance('RightParen')
@@ -152,7 +117,7 @@ export default function makeParse () {
     return this
   })
 
-  prefix('FunctionExpression', function nud () {
+  createPrefix('FunctionExpression', function nud () {
     advance('LeftParen')
     const a = []
     let e
@@ -178,10 +143,8 @@ export default function makeParse () {
     return this
   })
 
-  prefix('Not')
-
-  const quantifier = function quantifier (id, nud) {
-    const s = symbol(id)
+  const createQuantifier = function createQuantifier (id, nud) {
+    const s = createSymbol(id)
     s.nud = nud || function nud () {
       this.type = 'QuantifiedExpression'
       this.quantifier = id
@@ -196,8 +159,53 @@ export default function makeParse () {
     return s
   }
 
-  quantifier('Existential')
-  quantifier('Universal')
+  createQuantifier('Existential')
+
+  createQuantifier('Universal')
+  const advance = function advance (id) {
+    if (id && token.id !== id) {
+      throw new Error(`Expected ${id} (got ${token.id}).`)
+    }
+    if (index >= tokens.length) {
+      token = symbolTable.End
+      return null
+    }
+    const t = tokens[index]
+    index += 1
+    const s = symbolTable[t.id]
+    if (!s) {
+      if (t.type === 'operator') throw new Error('Unknown operator.')
+      else throw new Error(`Unknown symbol: ${t.value}.`)
+    }
+    token = Object.create(s)
+    if (t.type === 'name') {
+      token.name = t.value
+    }
+    token.type = t.id
+    token.start = t.start
+    token.end = t.end
+    return token
+  }
+
+  const expression = function expression (rbp = 0) {
+    if (token.id === 'End') return {}
+    let t = token
+    let left
+    advance()
+    left = t.nud()
+    while (rbp < token.lbp) {
+      t = token
+      advance()
+      left = t.led(left)
+    }
+    return left
+  }
+
+  const singleExpression = function singleExpression () {
+    const t = token
+    advance()
+    return t.nud()
+  }
 
   return function parse (source) {
     const lexer = new Lexer()
