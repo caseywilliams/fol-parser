@@ -3,9 +3,9 @@
  http://javascript.crockford.com/tdop/tdop.html
  */
 
-import Lexer from './lexer'
+import tokenize from './tokenize'
 
-export default function Parser () {
+function Parser () {
   const symbolTable = {}
   let token
   let tokens
@@ -20,7 +20,7 @@ export default function Parser () {
     }
   }
 
-  const createSymbol = function createSymbol (id, bp = 0) {
+  function createSymbol (id, bp = 0) {
     let s = symbolTable[id]
     if (s) {
       if (bp >= s.lbp) {
@@ -74,7 +74,7 @@ export default function Parser () {
     return this
   }
 
-  const createInfix = function createInfix (id, bp, led) {
+  function createInfix (id, bp, led) {
     const s = createSymbol(id, bp)
     s.led = led || function led (left) {
       this.type = 'BinaryExpression'
@@ -94,7 +94,7 @@ export default function Parser () {
 
   createInfix('Implication', 40)
 
-  const createPrefix = function createPrefix (id, nud) {
+  function createPrefix (id, nud) {
     const s = createSymbol(id)
     s.nud = nud || function nud () {
       this.type = 'UnaryExpression'
@@ -143,7 +143,7 @@ export default function Parser () {
     return this
   })
 
-  const createQuantifier = function createQuantifier (id, nud) {
+  function createQuantifier (id, nud) {
     const s = createSymbol(id)
     s.nud = nud || function nud () {
       this.type = 'QuantifiedExpression'
@@ -187,7 +187,7 @@ export default function Parser () {
     return token
   }
 
-  const expression = function expression (rbp = 0) {
+  function expression (rbp = 0) {
     if (token.id === 'End') return {}
     let t = token
     let left
@@ -201,17 +201,18 @@ export default function Parser () {
     return left
   }
 
-  const singleExpression = function singleExpression () {
+  function singleExpression () {
     const t = token
     advance()
     return t.nud()
   }
 
   return function parse (source) {
-    const lexer = new Lexer()
-    tokens = lexer.lex(source)
+    tokens = tokenize(source)
     index = 0
     advance()
     return expression()
   }
 }
+
+export default new Parser()
