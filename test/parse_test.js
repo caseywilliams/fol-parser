@@ -16,21 +16,27 @@ test('Single predicate', t => {
 })
 
 test('Predicate with arguments', t => {
-  t.deepEqual(parse('P(x, y)'), {
+  t.deepEqual(parse('P(x, !y)'), {
     type: 'Predicate',
     name: 'P',
     start: 0,
-    end: 7,
+    end: 8,
     arguments: [{
       type: 'VariableOrConstant',
       name: 'x',
       start: 2,
       end: 3
     }, {
-      type: 'VariableOrConstant',
-      name: 'y',
+      type: 'UnaryExpression',
+      operator: 'Negation',
       start: 5,
-      end: 6
+      end: 7,
+      argument: {
+        type: 'VariableOrConstant',
+        name: 'y',
+        start: 6,
+        end: 7
+      }
     }]
   })
 })
@@ -229,21 +235,27 @@ test('Function symbol with single argument', t => {
 })
 
 test('Function symbol with multiple arguments', t => {
-  t.deepEqual(parse('f(x, y)'), {
+  t.deepEqual(parse('f(x, !y)'), {
     type: 'FunctionExpression',
     name: 'f',
     start: 0,
-    end: 7,
+    end: 8,
     arguments: [{
       type: 'VariableOrConstant',
       name: 'x',
       start: 2,
       end: 3
     }, {
-      type: 'VariableOrConstant',
-      name: 'y',
+      type: 'UnaryExpression',
+      operator: 'Negation',
       start: 5,
-      end: 6
+      end: 7,
+      argument: {
+        type: 'VariableOrConstant',
+        name: 'y',
+        start: 6,
+        end: 7
+      }
     }]
   })
 })

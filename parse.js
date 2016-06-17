@@ -5,8 +5,6 @@
 
 import tokenize from './tokenize'
 
-const validArgument = (e) =>
-  (['VariableOrConstant', 'FunctionExpression'].indexOf(e.type) >= 0)
 
 function Parser () {
   const symbolTable = {}
@@ -125,6 +123,15 @@ function Parser () {
     return this
   })
 
+  const validArgument = (e) => {
+    if (['VariableOrConstant', 'FunctionExpression'].indexOf(e.type) >= 0) {
+      return true
+    } else if (e.type === 'UnaryExpression' && validArgument(e.argument)) {
+      return true
+    }
+    return false
+  }
+
   createPrefix('FunctionExpression', function nud () {
     advance('LeftParen')
     const a = []
@@ -168,6 +175,7 @@ function Parser () {
   createQuantifier('Existential')
 
   createQuantifier('Universal')
+
   const advance = function advance (id) {
     if (id && token.id !== id) {
       throw new Error(`Expected ${id} (got ${token.id}).`)
