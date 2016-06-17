@@ -2,10 +2,10 @@ import parse from './parse'
 import multimethod from 'multimethod'
 
 const operatorStrings = {
-  And: '&',
-  Or: '|',
+  Conjunction: '&',
+  Disjunction: '|',
   Implication: '->',
-  Not: '!'
+  Negation: '!'
 }
 
 const print = multimethod()
@@ -19,7 +19,7 @@ const print = multimethod()
       print(t.right) ].join(' ')
   })
   .when('UnaryExpression', function (t) {
-    if (t.operator === 'Not')
+    if (t.operator === 'Negation')
       return operatorStrings[t.operator] + print(t.argument)
     else throw new Error(`Unknown operator: ${t.operator}`)
   })

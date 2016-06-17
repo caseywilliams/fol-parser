@@ -47,10 +47,10 @@ test('Multi-character predicate name', t => {
 })
 
 test('Binary operations', t => {
-  t.deepEqual(tokenize('∨'), [ operatorOutput('Or') ])
-  t.deepEqual(tokenize('|'), [ operatorOutput('Or') ])
-  t.deepEqual(tokenize('∧'), [ operatorOutput('And') ])
-  t.deepEqual(tokenize('&'), [ operatorOutput('And') ])
+  t.deepEqual(tokenize('∨'), [ operatorOutput('Disjunction') ])
+  t.deepEqual(tokenize('|'), [ operatorOutput('Disjunction') ])
+  t.deepEqual(tokenize('∧'), [ operatorOutput('Conjunction') ])
+  t.deepEqual(tokenize('&'), [ operatorOutput('Conjunction') ])
   t.deepEqual(tokenize('→'), [ operatorOutput('Implication') ])
   t.deepEqual(tokenize('->'), [ operatorOutput('Implication', 0, 2) ])
 })
@@ -84,9 +84,9 @@ test('Function symbol', t => {
 })
 
 test('Negation', t => {
-  t.deepEqual(tokenize('!'), [ operatorOutput('Not') ])
-  t.deepEqual(tokenize('¬'), [ operatorOutput('Not') ])
-  t.deepEqual(tokenize('~'), [ operatorOutput('Not') ])
+  t.deepEqual(tokenize('!'), [ operatorOutput('Negation') ])
+  t.deepEqual(tokenize('¬'), [ operatorOutput('Negation') ])
+  t.deepEqual(tokenize('~'), [ operatorOutput('Negation') ])
 })
 
 test('Parentheses', t => {

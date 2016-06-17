@@ -95,9 +95,9 @@ function Parser () {
     return s
   }
 
-  createInfix('Or', 50)
+  createInfix('Disjunction', 50)
 
-  createInfix('And', 50)
+  createInfix('Conjunction', 50)
 
   createInfix('Implication', 40)
 
@@ -113,7 +113,7 @@ function Parser () {
     return s
   }
 
-  createPrefix('Not')
+  createPrefix('Negation')
 
   createPrefix('LeftParen', function nud () {
     this.type = 'ExpressionStatement'

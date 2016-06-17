@@ -62,7 +62,7 @@ test('Boolean values', t => {
 test('Default binary operation', t => {
   t.deepEqual(parse('P | Q'), {
     type: 'BinaryExpression',
-    operator: 'Or',
+    operator: 'Disjunction',
     start: 0,
     end: 5,
     left: {
@@ -85,7 +85,7 @@ test('Default binary operation', t => {
 test('Negation', t => {
   t.deepEqual(parse('!P'), {
     type: 'UnaryExpression',
-    operator: 'Not',
+    operator: 'Negation',
     start: 0,
     end: 2,
     argument: {
@@ -105,7 +105,7 @@ test('Expression statement', t => {
     end: 7,
     expression: {
       type: 'BinaryExpression',
-      operator: 'Or',
+      operator: 'Disjunction',
       start: 1,
       end: 6,
       left: {
@@ -141,7 +141,7 @@ test('Precedence of and/or is greater than impl', t => {
     },
     right: {
       type: 'BinaryExpression',
-      operator: 'And',
+      operator: 'Conjunction',
       start: 5,
       end: 10,
       left: {
@@ -165,7 +165,7 @@ test('Precedence of and/or is greater than impl', t => {
 test('Parentheses override default operator precedence', t => {
   t.deepEqual(parse('(P -> Q) & R'), {
     type: 'BinaryExpression',
-    operator: 'And',
+    operator: 'Conjunction',
     start: 0,
     end: 12,
     left: {
@@ -343,7 +343,7 @@ test('Quantified expression', t => {
 test('Quantifier scope isn\'t too greedy', t => {
   t.deepEqual(parse('E.x f(x) | g(x)'), {
     type: 'BinaryExpression',
-    operator: 'Or',
+    operator: 'Disjunction',
     start: 0,
     end: 15,
     left: {
