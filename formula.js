@@ -9,7 +9,7 @@ const operatorStrings = {
 }
 
 const print = multimethod()
-  .dispatch(function(t) {
+  .dispatch(function (t) {
     return t.type
   })
   .when('BinaryExpression', function (t) {
@@ -19,9 +19,9 @@ const print = multimethod()
       print(t.right) ].join(' ')
   })
   .when('UnaryExpression', function (t) {
-    if (t.operator === 'Negation')
+    if (t.operator === 'Negation') {
       return operatorStrings[t.operator] + print(t.argument)
-    else throw new Error(`Unknown operator: ${t.operator}`)
+    } else throw new Error(`Unknown operator: ${t.operator}`)
   })
   .when('ExpressionStatement', function (t) {
     return '(' + print(t.expression) + ')'
@@ -33,8 +33,8 @@ const print = multimethod()
     } else return t.name
   })
   .when('FunctionExpression', function (t) {
-      const args = t.arguments.map(print)
-      return t.name +  '(' + args.join(',') + ')'
+    const args = t.arguments.map(print)
+    return t.name + '(' + args.join(',') + ')'
   })
   .when('QuantifiedExpression', function (t) {
     let out = (t.quantifier === 'Universal' ? 'A.' : 'E.')

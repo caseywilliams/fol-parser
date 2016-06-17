@@ -67,7 +67,7 @@ function Parser () {
           if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
             throw new Error('Function parameters should be variables, constants, or other functions')
           }
-          const e = expression()
+          e = expression()
           this.end = e.end
           a.push(e)
           if (token.type !== 'Comma') break
