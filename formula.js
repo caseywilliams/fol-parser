@@ -97,7 +97,7 @@ const negate = multimethod()
           left: t.expression.left
         }
       }
-    }
+    } else out.expression = negate(t.expression)
     return out
   })
   .when('BinaryExpression', function (t) {

@@ -208,8 +208,9 @@ test('Error: function symbol with no arguments', t => {
   t.throws(() => parse('f()'), 'Functions should have at least one argument')
 })
 
-test('Error: function with inappropriate argument types', t => {
-  t.throws(() => parse('f(x, P)'), 'Function parameters should be variables, constants, or other functions')
+test('Error: inappropriate argument types', t => {
+  t.throws(() => parse('f(x, P)'), 'Function arguments should be variables, constants, or other functions (got Predicate)')
+  t.throws(() => parse('P(x, Q)'), 'Predicate arguments should be variables, constants, or functions (got Predicate)')
 })
 
 test('Function symbol with single argument', t => {

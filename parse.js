@@ -5,6 +5,9 @@
 
 import tokenize from './tokenize'
 
+const validArgument = (e) =>
+  (['VariableOrConstant', 'FunctionExpression'].indexOf(e.type) >= 0)
+
 function Parser () {
   const symbolTable = {}
   let token
@@ -64,10 +67,8 @@ function Parser () {
       advance()
       if (token.id !== 'RightParen') {
         while (true) {
-          if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
-            throw new Error('Function parameters should be variables, constants, or other functions')
-          }
           e = expression()
+          if (!validArgument(e)) throw new Error(`Predicate arguments should be variables, constants, or functions (got ${e.type})`)
           this.end = e.end
           a.push(e)
           if (token.type !== 'Comma') break
@@ -131,10 +132,8 @@ function Parser () {
     this.end = this.start
     if (token.id !== 'RightParen') {
       while (true) {
-        if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
-          throw new Error('Function parameters should be variables, constants, or other functions')
-        }
         e = expression()
+        if (!validArgument(e)) throw new Error(`Function arguments should be variables, constants, or other functions (got ${e.type})`)
         this.end = e.end
         a.push(e)
         if (token.id !== 'Comma') break

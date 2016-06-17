@@ -34,4 +34,5 @@ test('Negation of binary expressions', t => {
 test('Negation of quantified expressions', t => {
   t.is(new Formula('A.x f(x)').negate().stringify(), 'E.x !f(x)')
   t.is(new Formula('E.x f(x)').negate().stringify(), 'A.x !f(x)')
+  t.is(new Formula('(A.x f(x))').negate().stringify(), '(E.x !f(x))')
 })
