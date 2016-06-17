@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-     "url": "https://github.com/caseywilliams/fol-parser"
+    "url": "https://github.com/caseywilliams/fol-parser"
   },
   "author": "Casey Williams",
   "license": "MIT",
@@ -34,5 +34,8 @@
   "ava": {
     "require": "babel-register",
     "babel": "inherit"
+  },
+  "dependencies": {
+    "multimethod": "^0.1.0"
   }
 }
