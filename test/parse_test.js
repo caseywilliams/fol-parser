@@ -20,7 +20,7 @@ test('Predicate with arguments', t => {
     type: 'Predicate',
     name: 'P',
     start: 0,
-    end: 1,
+    end: 7,
     arguments: [{
       type: 'VariableOrConstant',
       name: 'x',

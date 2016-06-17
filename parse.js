@@ -60,15 +60,22 @@ function Parser () {
   createSymbol('Predicate').nud = function nud () {
     const a = []
     if (token.id === 'LeftParen') {
+      let e
       advance()
-      while (true) {
-        if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
-          throw new Error('Function parameters should be variables, constants, or other functions')
+      if (token.id !== 'RightParen') {
+        while (true) {
+          if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
+            throw new Error('Function parameters should be variables, constants, or other functions')
+          }
+          const e = expression()
+          this.end = e.end
+          a.push(e)
+          if (token.type !== 'Comma') break
+          advance()
         }
-        a.push(expression())
-        if (token.type !== 'Comma') break
-        advance()
       }
+      advance('RightParen')
+      this.end++
     }
     this.arguments = a
     return this
@@ -124,7 +131,7 @@ function Parser () {
     this.end = this.start
     if (token.id !== 'RightParen') {
       while (true) {
-        if ((token.id !== 'VariableOrConstant') && (token.id !== 'FunctionExpression')) {
+        if ((token.type !== 'VariableOrConstant') && (token.type !== 'FunctionExpression')) {
           throw new Error('Function parameters should be variables, constants, or other functions')
         }
         e = expression()
