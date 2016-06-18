@@ -5,7 +5,6 @@
 
 import tokenize from './tokenize'
 
-
 function Parser () {
   const symbolTable = {}
   let token

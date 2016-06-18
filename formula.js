@@ -17,4 +17,8 @@ export default class Formula {
   negate () {
     return new Formula(lib.negate(this.source))
   }
+
+  reduceNegationScope () {
+    return new Formula(lib.reduceNegationScope(this.source))
+  }
 }

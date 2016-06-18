@@ -120,3 +120,49 @@ export const negate = multimethod()
   .default(function (t) {
     throw new Error(`Unrecognized type: ${t.type}`)
   })
+
+export const reduceNegationScope = multimethod()
+  .dispatch(function (t) {
+    if (!t || !t.type) throw new Error(`Invalid expression: ${JSON.stringify(t)}`)
+    return t.type
+  })
+  .when('UnaryExpression', function (t) {
+    if (t.operator === 'Negation') {
+      let negated = t.argument
+      if (negated.type === 'UnaryExpression' && negated.operator === 'Negation') {
+        /* Nested negations */
+        let n = 1
+        while ((negated.argument.type === 'UnaryExpression') &&
+          (negated.argument.operator === 'Negation')) {
+          negated = JSON.parse(JSON.stringify(negated.argument))
+          ++n
+        }
+        if (n % 2) {
+          /* final expression not negated */
+          if (negated.argument.type === 'ExpressionStatement') {
+            return reduceNegationScope(negated.argument.expression)
+          }
+          return negated.argument
+        } else {
+          /* final expression negated */
+          if (negated.argument.type === 'ExpressionStatement') {
+            return negate(reduceNegationScope(negated.argument)).expression
+          }
+          return negate(negated.argument)
+        }
+      } else if (negated.type === 'ExpressionStatement') {
+        /* remove parens */
+        return negate({
+          type: 'ExpressionStatement',
+          expression: negated.expression
+        }).expression
+      } else if (negated.type === 'QuantifiedExpression') {
+        return negate(t.argument)
+      } else {
+        return t
+      }
+    } else throw new Error(`Unknown operator: ${t.operator}`)
+  })
+  .default(function (t) {
+    return t
+  })

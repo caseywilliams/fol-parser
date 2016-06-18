@@ -36,3 +36,16 @@ test('Negation of quantified expressions', t => {
   t.is(new Formula('E.x f(x)').negate().stringify(), 'A.x !f(x)')
   t.is(new Formula('(A.x f(x))').negate().stringify(), '(E.x !f(x))')
 })
+
+test('Negation scope reduction', t => {
+  t.is(new Formula('P').reduceNegationScope().stringify(), 'P')
+  t.is(new Formula('!P').reduceNegationScope().stringify(), '!P')
+  t.is(new Formula('!!P').reduceNegationScope().stringify(), 'P')
+  t.is(new Formula('!!!P').reduceNegationScope().stringify(), '!P')
+  t.is(new Formula('!(P | Q)').reduceNegationScope().stringify(), '!P & !Q')
+  t.is(new Formula('!!(P | Q)').reduceNegationScope().stringify(), 'P | Q')
+  t.is(new Formula('!!!(P | Q)').reduceNegationScope().stringify(), '!P & !Q')
+  t.is(new Formula('!A.x f(x)').reduceNegationScope().stringify(), 'E.x !f(x)')
+  t.is(new Formula('!!A.x f(x)').reduceNegationScope().stringify(), 'A.x f(x)')
+  t.is(new Formula('!!!A.x f(x)').reduceNegationScope().stringify(), 'E.x !f(x)')
+})
