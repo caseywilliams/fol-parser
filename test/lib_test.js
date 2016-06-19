@@ -4,6 +4,7 @@ import parse from '../parse'
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
+const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
 
 test('Basic string output', t => {
   const s = 'E.x f(x) | A.y (!Q -> P(y,z)) & R'
@@ -50,4 +51,11 @@ test('Negation scope reduction', t => {
   t.is(collapseNegations('(!!P -> !!!Q)'), '(P -> !Q)')
   t.is(collapseNegations('!!A.x !!P(x) -> !!!Q'), 'A.x P(x) -> !Q')
   t.is(collapseNegations('!A.x (!!P(x) -> !!!Q)'), 'E.x (P(x) & Q)')
+})
+
+test('Remove implications', t => {
+  t.is(removeImplications('P -> Q'), '!P | Q')
+  t.is(removeImplications('(P -> Q)'), '(!P | Q)')
+  t.is(removeImplications('A.x f(x) -> g(y)'), 'E.x !f(x) | g(y)')
+  t.is(removeImplications('A.x (f(x) -> g(y))'), 'A.x (!f(x) | g(y))')
 })

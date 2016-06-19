@@ -170,4 +170,26 @@ lib = lib
     (t) => t
   )
 
+lib = lib
+  .method('removeImplications',
+    (t) => (t.type === 'BinaryExpression') && (t.operator === 'Implication'),
+    (t) => {
+      t.operator = 'Disjunction'
+      t.left = lib.negate(t.left)
+      return t
+    }
+  ).method('removeImplications',
+    (t) => t.type === 'ExpressionStatement',
+    (t) => expressionWrap(lib.removeImplications(t.expression))
+  ).method('removeImplications',
+    (t) => t.type === 'QuantifiedExpression',
+    (t) => {
+      t.expression = lib.removeImplications(t.expression)
+      return t
+    }
+  ).method('removeImplications',
+    (t) => true,
+    (t) => t
+  )
+
 export default lib
