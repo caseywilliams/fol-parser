@@ -196,4 +196,84 @@ lib = lib
     (t) => t
   )
 
+lib = lib
+  .method('makeReplacement',
+    (t) => ['Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
+    (t) => {
+      t.arguments = t.arguments.map(lib.makeReplacement)
+      return t
+    }
+  ).method('makeReplacement',
+    (t) => t.type === 'VariableOrConstant',
+    (t) => {
+      if (t.name === lib.toReplace) {
+        t.name = lib.replacement ? lib.replacement : t.name
+      }
+      return t
+    }
+  ).method('makeReplacement',
+    (t) => ['QuantifiedExpression', 'ExpressionStatement'].indexOf(t.type) >= 0,
+    (t) => {
+      t.expression = lib.makeReplacement(t.expression)
+      return t
+    }
+  ).method('makeReplacement',
+    (t) => t.type === 'BinaryExpression',
+    (t) => {
+      t.left = lib.makeReplacement(t.left)
+      t.right = lib.makeReplacement(t.right)
+      return t
+    }
+  ).method('makeReplacement',
+    (t) => true,
+    (t) => t
+  )
+
+lib = lib.property('scope', [])
+  .property('toReplace', null)
+  .property('replacement', null)
+  .method('renameVariables',
+    (t) => t.type === 'QuantifiedExpression',
+    (t) => {
+      const quantified = t.variable.name.charCodeAt(0)
+      if (lib.scope.indexOf(quantified) >= 0) {
+        let charCode
+        while (true) {
+          charCode = 65 + (Math.random() % 25)
+          if (lib.scope.indexOf(charCode) < 0) break
+        }
+        lib.toReplace = t.variable.name
+        lib.replacement = String.fromCharCode(charCode).toLowerCase()
+        t.variable.name = lib.replacement
+        t.expression = lib.makeReplacement(t.expression)
+        lib.scope.push(charCode)
+      } else {
+        lib.scope.push(quantified)
+        t.expression = lib.renameVariables(t.expression)
+      }
+      return t
+    }
+  ).method('renameVariables',
+    (t) => t.type === 'BinaryExpression',
+    (t) => {
+      t.left = lib.renameVariables(t.left)
+      t.right = lib.renameVariables(t.right)
+      return t
+    }
+  ).method('renameVariables',
+    (t) => t.type === 'ExpressionStatement',
+    (t) => {
+      t.expression = lib.renameVariables(t.expression)
+      return t
+    }
+  ).method('renameVariables',
+    (t) => t.type === 'FunctionExpression',
+    (t) => {
+      t.arguments = t.arguments.map(lib.renameVariables)
+      return t
+    }
+  ).method('renameVariables',
+    (t) => true,
+    (t) => t
+  )
 export default lib
