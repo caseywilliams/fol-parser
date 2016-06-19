@@ -9,6 +9,19 @@ const strings = {
   Existential: 'E.'
 }
 
+const match = {
+  default: (t) => true,
+  isVariable: (t) => t.type === 'VariableOrConstant',
+  isPredicate: (t) => t.type === 'Predicate',
+  isBinary: (t) => t.type === 'BinaryExpression',
+  isFunction: (t) => t.type === 'FunctionExpression',
+  isExpression: (t) => t.type === 'ExpressionStatement',
+  isQuantified: (t) => t.type === 'QuantifiedExpression',
+  isNegation: (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+  hasExpression: (t) => (t.type === 'ExpressionStatement') || (t.type === 'QuantifiedExpression'),
+  hasArguments: (t) => (t.type === 'Predicate') || (t.type === 'FunctionExpression')
+}
+
 const negationWrap = (t) => ({
   type: 'UnaryExpression',
   operator: 'Negation',
@@ -22,26 +35,26 @@ const expressionWrap = (t) => ({
 
 let lib = _.environment()
   .method('stringify',
-    (t) => t.type === 'VariableOrConstant',
+    match.isVariable,
     (t) => t.name
   ).method('stringify',
-    (t) => t.type === 'BinaryExpression',
+    match.isBinary,
     (t) => [
       lib.stringify(t.left),
       strings[t.operator],
       lib.stringify(t.right)
     ].join(' ')
   ).method('stringify',
-    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    match.isNegation,
     (t) => strings[t.operator] + lib.stringify(t.argument)
   ).method('stringify',
-    (t) => t.type === 'FunctionExpression',
+    match.isFunction,
     (t) => {
       const args = t.arguments.map(lib.stringify)
       return t.name + '(' + args.join(',') + ')'
     }
   ).method('stringify',
-    (t) => t.type === 'Predicate',
+    match.isPredicate,
     (t) => {
       if (t.arguments.length) {
         const args = t.arguments.map(lib.stringify)
@@ -49,10 +62,10 @@ let lib = _.environment()
       } else return t.name
     }
   ).method('stringify',
-    (t) => t.type === 'ExpressionStatement',
+    match.isExpression,
     (t) => '(' + lib.stringify(t.expression) + ')'
   ).method('stringify',
-    (t) => t.type === 'QuantifiedExpression',
+    match.isQuantified,
     (t) => strings[t.quantifier] + lib.stringify(t.variable) + ' ' + lib.stringify(t.expression)
   )
 
@@ -61,15 +74,15 @@ lib = lib
     (t) => ['VariableOrConstant', 'Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
     (t) => negationWrap(t)
   ).method('negate',
-    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    match.isNegation,
     (t) => t.argument
   ).method('negate',
-    (t) => t.type === 'ExpressionStatement',
+    match.isExpression,
     (t) => {
       return expressionWrap(lib.negate(t.expression))
     }
   ).method('negate',
-    (t) => t.type === 'BinaryExpression',
+    match.isBinary,
     (t) => {
       if (t.operator === 'Conjunction') {
         return {
@@ -95,7 +108,7 @@ lib = lib
       }
     }
   ).method('negate',
-    (t) => t.type === 'QuantifiedExpression',
+    match.isQuantified,
     (t) => {
       t.quantifier = (t.quantifier === 'Universal') ? 'Existential' : 'Universal'
       if (t.expression.type === 'ExpressionStatement') {
@@ -109,7 +122,7 @@ lib = lib
 lib = lib
   .method('collapseNegation',
     /** nested negations **/
-    (t) => (t.argument.type === 'UnaryExpression') && (t.argument.operator === 'Negation'),
+    (t) => match.isNegation(t.argument),
     (t) => {
       let negated = t.argument
       let n = 1
@@ -124,23 +137,23 @@ lib = lib
       return (n % 2) ? negated.argument : lib.negate(negated.argument)
     }
   ).method('collapseNegation',
-    (t) => t.argument.type === 'ExpressionStatement',
+    (t) => match.isExpression(t.argument),
     (t) => lib.negate(t.argument)
   ).method('collapseNegation',
-    (t) => t.argument.type === 'QuantifiedExpression',
+    (t) => match.isQuantified(t.argument),
     (t) => {
       t.argument = lib.collapseNegations(lib.negate(t.argument))
       t.argument.expression = lib.collapseNegations(t.argument.expression)
       return t.argument
     }
   ).method('collapseNegation',
-    (t) => true,
+    match.default,
     (t) => t
   )
 
 lib = lib
   .method('collapseNegations',
-    (t) => t.type === 'BinaryExpression',
+    match.isBinary,
     (t) => {
       t.left = lib.collapseNegations(t.left)
       t.right = lib.collapseNegations(t.right)
@@ -148,7 +161,7 @@ lib = lib
     }
   )
   .method('collapseNegations',
-    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    match.isNegation,
     (t) => lib.collapseNegation(t)
   ).method('collapseNegations',
     (t) => (t.type === 'QuantifiedExpression'),
@@ -157,22 +170,22 @@ lib = lib
       return t
     }
   ).method('collapseNegations',
-    (t) => t.type === 'ExpressionStatement',
+    match.isExpression,
     (t) => expressionWrap(lib.collapseNegations(t.expression))
   ).method('collapseNegations',
-    (t) => ['FunctionExpression', 'Predicate'].indexOf(t.type) >= 0,
+    match.hasArguments,
     (t) => {
       t.arguments = t.arguments.map(lib.collapseNegations)
       return t
     }
   ).method('collapseNegations',
-    (t) => true,
+    match.default,
     (t) => t
   )
 
 lib = lib
   .method('removeImplications',
-    (t) => (t.type === 'BinaryExpression'),
+    match.isBinary,
     (t) => {
       t.left = lib.removeImplications(t.left)
       t.right = lib.removeImplications(t.right)
@@ -183,7 +196,7 @@ lib = lib
       return t
     }
   ).method('removeImplications',
-    (t) => t.type === 'ExpressionStatement',
+    match.isExpression,
     (t) => expressionWrap(lib.removeImplications(t.expression))
   ).method('removeImplications',
     (t) => t.type === 'QuantifiedExpression',
@@ -192,84 +205,84 @@ lib = lib
       return t
     }
   ).method('removeImplications',
-    (t) => true,
+    match.default,
     (t) => t
   )
 
 lib = lib
   .method('makeReplacement',
-    (t, from, to) => ['Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
+    match.hasArguments,
     (t, from, to) => {
       t.arguments = t.arguments.map((arg) => lib.makeReplacement(arg, from, to))
       return t
     }
   ).method('makeReplacement',
-    (t, from, to) => t.type === 'VariableOrConstant',
+    match.isVariable,
     (t, from, to) => {
       if (to && t.name === from) t.name = to
       return t
     }
   ).method('makeReplacement',
-    (t, from, to) => ['QuantifiedExpression', 'ExpressionStatement'].indexOf(t.type) >= 0,
+    match.hasExpression,
     (t, from, to) => {
       t.expression = lib.makeReplacement(t.expression, from, to)
       return t
     }
   ).method('makeReplacement',
-    (t, from, to) => t.type === 'BinaryExpression',
+    match.isBinary,
     (t, from, to) => {
       t.left = lib.makeReplacement(t.left, from, to)
       t.right = lib.makeReplacement(t.right, from, to)
       return t
     }
   ).method('makeReplacement',
-    (t, from, to) => true,
+    match.default,
     (t, from, to) => t
   )
 
 lib = lib.method('renameVariables',
-    (t, scope = []) => t.type === 'QuantifiedExpression',
-    (t, scope = []) => {
-      const quantified = t.variable.name.charCodeAt(0)
-      if (scope.indexOf(quantified) >= 0) {
-        let charCode
-        while (true) {
-          charCode = 65 + (Math.random() % 25)
-          if (scope.indexOf(charCode) < 0) break
-        }
-        const from = t.variable.name
-        const to = String.fromCharCode(charCode).toLowerCase()
-        t.variable.name = to
-        t.expression = lib.makeReplacement(t.expression, from, to)
-        scope.push(charCode)
-      } else {
-        scope.push(quantified)
-        t.expression = lib.renameVariables(t.expression, scope)
+  match.isQuantified,
+  (t, scope = []) => {
+    const quantified = t.variable.name.charCodeAt(0)
+    if (scope.indexOf(quantified) >= 0) {
+      let charCode
+      while (true) {
+        charCode = 65 + (Math.random() % 25)
+        if (scope.indexOf(charCode) < 0) break
       }
-      return t
-    }
-  ).method('renameVariables',
-    (t, scope = []) => t.type === 'BinaryExpression',
-    (t, scope = []) => {
-      t.left = lib.renameVariables(t.left, scope)
-      t.right = lib.renameVariables(t.right, scope)
-      return t
-    }
-  ).method('renameVariables',
-    (t, scope = []) => t.type === 'ExpressionStatement',
-    (t, scope = []) => {
+      const from = t.variable.name
+      const to = String.fromCharCode(charCode).toLowerCase()
+      t.variable.name = to
+      t.expression = lib.makeReplacement(t.expression, from, to)
+      scope.push(charCode)
+    } else {
+      scope.push(quantified)
       t.expression = lib.renameVariables(t.expression, scope)
-      return t
     }
-  ).method('renameVariables',
-    (t, scope = []) => t.type === 'FunctionExpression',
-    (t, scope = []) => {
-      t.arguments = t.arguments.map(lib.renameVariables, scope)
-      return t
-    }
-  ).method('renameVariables',
-    (t, scope = []) => true,
-    (t, scope = []) => t
-  )
+    return t
+  }
+).method('renameVariables',
+  match.isBinary,
+  (t, scope = []) => {
+    t.left = lib.renameVariables(t.left, scope)
+    t.right = lib.renameVariables(t.right, scope)
+    return t
+  }
+).method('renameVariables',
+  match.isExpression,
+  (t, scope = []) => {
+    t.expression = lib.renameVariables(t.expression, scope)
+    return t
+  }
+).method('renameVariables',
+  match.isFunction,
+  (t, scope = []) => {
+    t.arguments = t.arguments.map(lib.renameVariables, scope)
+    return t
+  }
+).method('renameVariables',
+  match.default,
+  (t, scope = []) => t
+)
 
 export default lib
