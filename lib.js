@@ -240,49 +240,50 @@ lib = lib
     (t, from, to) => t
   )
 
-lib = lib.method('renameVariables',
-  match.isQuantified,
-  (t, scope = []) => {
-    const quantified = t.variable.name.charCodeAt(0)
-    if (scope.indexOf(quantified) >= 0) {
-      let charCode
-      while (true) {
-        charCode = 65 + (Math.random() % 25)
-        if (scope.indexOf(charCode) < 0) break
+lib = lib
+  .method('renameVariables',
+    match.isQuantified,
+    (t, scope = []) => {
+      const quantified = t.variable.name.charCodeAt(0)
+      if (scope.indexOf(quantified) >= 0) {
+        let charCode
+        while (true) {
+          charCode = 65 + (Math.random() % 25)
+          if (scope.indexOf(charCode) < 0) break
+        }
+        const from = t.variable.name
+        const to = String.fromCharCode(charCode).toLowerCase()
+        t.variable.name = to
+        t.expression = lib.makeReplacement(lib.renameVariables(t.expression, scope), from, to)
+        scope.push(charCode)
+      } else {
+        scope.push(quantified)
+        t.expression = lib.renameVariables(t.expression, scope)
       }
-      const from = t.variable.name
-      const to = String.fromCharCode(charCode).toLowerCase()
-      t.variable.name = to
-      t.expression = lib.makeReplacement(t.expression, from, to)
-      scope.push(charCode)
-    } else {
-      scope.push(quantified)
-      t.expression = lib.renameVariables(t.expression, scope)
+      return t
     }
-    return t
-  }
-).method('renameVariables',
-  match.isBinary,
-  (t, scope = []) => {
-    t.left = lib.renameVariables(t.left, scope)
-    t.right = lib.renameVariables(t.right, scope)
-    return t
-  }
-).method('renameVariables',
-  match.isExpression,
-  (t, scope = []) => {
-    t.expression = lib.renameVariables(t.expression, scope)
-    return t
-  }
-).method('renameVariables',
-  match.isFunction,
-  (t, scope = []) => {
-    t.arguments = t.arguments.map(lib.renameVariables, scope)
-    return t
-  }
-).method('renameVariables',
-  match.default,
-  (t, scope = []) => t
-)
+  ).method('renameVariables',
+    match.isBinary,
+    (t, scope = []) => {
+      t.left = lib.renameVariables(t.left, scope)
+      t.right = lib.renameVariables(t.right, scope)
+      return t
+    }
+  ).method('renameVariables',
+    match.isExpression,
+    (t, scope = []) => {
+      t.expression = lib.renameVariables(t.expression, scope)
+      return t
+    }
+  ).method('renameVariables',
+    match.isFunction,
+    (t, scope = []) => {
+      t.arguments = t.arguments.map(lib.renameVariables, scope)
+      return t
+    }
+  ).method('renameVariables',
+    match.default,
+    (t, scope = []) => t
+  )
 
 export default lib

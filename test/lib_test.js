@@ -63,7 +63,8 @@ test('Remove implications', t => {
   t.is(removeImplications('A.x (f(x) -> g(y))'), 'A.x (!f(x) | g(y))')
 })
 
-sinon.stub(Math, 'random').returns(25)
+sinon.stub(Math, 'random')
+  .returns(25)
   .onCall(1).returns(26)
   .onCall(2).returns(27)
   .onCall(3).returns(28)
@@ -71,6 +72,10 @@ sinon.stub(Math, 'random').returns(25)
 test('Rename quantified variables', t => {
   t.is(renameVariables('A.y f(y) | E.y g(y)'),
     'A.y f(y) | E.a g(a)')
+  Math.random.reset()
   t.is(renameVariables('A.y f(y) | E.y (g(z,y) & f(y)))'),
-    'A.y f(y) | E.b (g(z,b) & f(b))')
+    'A.y f(y) | E.a (g(z,a) & f(a))')
+  Math.random.reset()
+  t.is(renameVariables('A.x E.y A.z f(x,y,z) | E.x A.y E.z g(x,y,z)'),
+    'A.x E.y A.z f(x,y,z) | E.a A.b E.c g(a,b,c)')
 })
