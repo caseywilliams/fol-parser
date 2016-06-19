@@ -36,6 +36,6 @@
     "babel": "inherit"
   },
   "dependencies": {
-    "multimethod": "^0.1.0"
+    "bilby": "0.0.2"
   }
 }

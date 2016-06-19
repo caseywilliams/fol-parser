@@ -1,168 +1,167 @@
-import multimethod from 'multimethod'
+import _ from 'bilby'
 
-const operatorStrings = {
+const strings = {
   Conjunction: '&',
   Disjunction: '|',
   Implication: '->',
-  Negation: '!'
+  Negation: '!',
+  Universal: 'A.',
+  Existential: 'E.'
 }
 
-function negationWrap (t) {
-  return {
-    type: 'UnaryExpression',
-    operator: 'Negation',
-    argument: t
-  }
-}
+const negationWrap = (t) => ({
+  type: 'UnaryExpression',
+  operator: 'Negation',
+  argument: t
+})
 
-export const print = multimethod()
-  .dispatch(function (t) {
-    return t.type
-  })
-  .when('VariableOrConstant', function (t) {
-    return t.name
-  })
-  .when('BinaryExpression', (t) => {
-    return [
-      print(t.left),
-      operatorStrings[t.operator],
-      print(t.right) ].join(' ')
-  })
-  .when('UnaryExpression', (t) => {
-    if (t.operator === 'Negation') {
-      return operatorStrings[t.operator] + print(t.argument)
-    } else throw new Error(`Unknown operator: ${t.operator}`)
-  })
-  .when('FunctionExpression', function (t) {
-    const args = t.arguments.map(print)
-    return t.name + '(' + args.join(',') + ')'
-  })
-  .when('Predicate', function (t) {
-    if (t.arguments.length) {
-      const args = t.arguments.map(print)
+const expressionWrap = (t) => ({
+  type: 'ExpressionStatement',
+  expression: t
+})
+
+let lib = _.environment()
+  .method('stringify',
+    (t) => t.type === 'VariableOrConstant',
+    (t) => t.name
+  ).method('stringify',
+    (t) => t.type === 'BinaryExpression',
+    (t) => [
+      lib.stringify(t.left),
+      strings[t.operator],
+      lib.stringify(t.right)
+    ].join(' ')
+  ).method('stringify',
+    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    (t) => strings[t.operator] + lib.stringify(t.argument)
+  ).method('stringify',
+    (t) => t.type === 'FunctionExpression',
+    (t) => {
+      const args = t.arguments.map(lib.stringify)
       return t.name + '(' + args.join(',') + ')'
-    } else return t.name
-  })
-  .when('ExpressionStatement', function (t) {
-    return '(' + print(t.expression) + ')'
-  })
-  .when('QuantifiedExpression', function (t) {
-    let out = (t.quantifier === 'Universal' ? 'A.' : 'E.')
-    return out + print(t.variable) + ' ' + print(t.expression)
-  })
-  .default(function (t) {
-    throw new Error(`Unrecognized type: ${t.type}`)
-  })
+    }
+  ).method('stringify',
+    (t) => t.type === 'Predicate',
+    (t) => {
+      if (t.arguments.length) {
+        const args = t.arguments.map(lib.stringify)
+        return t.name + '(' + args.join(',') + ')'
+      } else return t.name
+    }
+  ).method('stringify',
+    (t) => t.type === 'ExpressionStatement',
+    (t) => '(' + lib.stringify(t.expression) + ')'
+  ).method('stringify',
+    (t) => t.type === 'QuantifiedExpression',
+    (t) => strings[t.quantifier] + lib.stringify(t.variable) + ' ' + lib.stringify(t.expression)
+  )
 
-export const negate = multimethod()
-  .dispatch(function (t) {
-    if (!t || !t.type) throw new Error(`Invalid expression: ${JSON.stringify(t)}`)
-    return t.type
-  })
-  .when('VariableOrConstant', function (t) {
-    return negationWrap(t)
-  })
-  .when('UnaryExpression', function (t) {
-    if (t.operator === 'Negation') {
-      return t.argument
-    } else throw new Error(`Unknown operator: ${t.operator}`)
-  })
-  .when('FunctionExpression', function (t) {
-    return negationWrap(t)
-  })
-  .when('Predicate', function (t) {
-    return negationWrap(t)
-  })
-  .when('ExpressionStatement', function (t) {
-    const out = JSON.parse(JSON.stringify(t))
-    if (t.expression.type === 'BinaryExpression') {
-      if (t.expression.operator === 'Conjunction') {
-        out.expression = {
+lib = lib
+  .method('negate',
+    (t) => ['VariableOrConstant', 'Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
+    (t) => negationWrap(t)
+  ).method('negate',
+    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    (t) => t.argument
+  ).method('negate',
+    (t) => t.type === 'ExpressionStatement',
+    (t) => {
+      return expressionWrap(lib.negate(t.expression))
+    }
+  ).method('negate',
+    (t) => t.type === 'BinaryExpression',
+    (t) => {
+      if (t.operator === 'Conjunction') {
+        return {
           type: 'BinaryExpression',
           operator: 'Disjunction',
-          left: negate(t.expression.left),
-          right: negate(t.expression.right)
+          left: lib.negate(t.left),
+          right: lib.negate(t.right)
         }
-      } else if (t.expression.operator === 'Disjunction') {
-        out.expression = {
+      } else if (t.operator === 'Disjunction') {
+        return {
           type: 'BinaryExpression',
           operator: 'Conjunction',
-          left: negate(t.expression.left),
-          right: negate(t.expression.right)
+          left: lib.negate(t.left),
+          right: lib.negate(t.right)
         }
-      } else if (t.expression.operator === 'Implication') {
-        out.expression = {
+      } else if (t.operator === 'Implication') {
+        return {
           type: 'BinaryExpression',
           operator: 'Conjunction',
-          right: negate(t.expression.right),
-          left: t.expression.left
+          left: t.left,
+          right: lib.negate(t.right)
         }
       }
-    } else out.expression = negate(t.expression)
-    return out
-  })
-  .when('BinaryExpression', function (t) {
-    return {
-      type: 'BinaryExpression',
-      operator: t.operator,
-      left: negate(t.left),
-      right: negate(t.right)
     }
-  })
-  .when('QuantifiedExpression', function (t) {
-    const out = JSON.parse(JSON.stringify(t))
-    if (t.quantifier === 'Universal') {
-      out.quantifier = 'Existential'
-    } else out.quantifier = 'Universal'
-    out.expression = negate(t.expression)
-    return out
-  })
-  .default(function (t) {
-    throw new Error(`Unrecognized type: ${t.type}`)
-  })
+  ).method('negate',
+    (t) => t.type === 'QuantifiedExpression',
+    (t) => {
+      t.quantifier = (t.quantifier === 'Universal') ? 'Existential' : 'Universal'
+      if (t.expression.type === 'ExpressionStatement') {
+        /* Maintain existing parens around quantified expressions */
+        t.expression = negationWrap(t.expression)
+      } else t.expression = lib.negate(t.expression)
+      return t
+    }
+  )
 
-export const reduceNegationScope = multimethod()
-  .dispatch(function (t) {
-    if (!t || !t.type) throw new Error(`Invalid expression: ${JSON.stringify(t)}`)
-    return t.type
-  })
-  .when('UnaryExpression', function (t) {
-    if (t.operator === 'Negation') {
+lib = lib
+  .method('collapseNegation',
+    /** nested negations **/
+    (t) => (t.argument.type === 'UnaryExpression') && (t.argument.operator === 'Negation'),
+    (t) => {
       let negated = t.argument
-      if (negated.type === 'UnaryExpression' && negated.operator === 'Negation') {
-        /* Nested negations */
-        let n = 1
-        while ((negated.argument.type === 'UnaryExpression') &&
-          (negated.argument.operator === 'Negation')) {
-          negated = JSON.parse(JSON.stringify(negated.argument))
-          ++n
-        }
-        if (n % 2) {
-          /* final expression not negated */
-          if (negated.argument.type === 'ExpressionStatement') {
-            return reduceNegationScope(negated.argument.expression)
-          }
-          return negated.argument
-        } else {
-          /* final expression negated */
-          if (negated.argument.type === 'ExpressionStatement') {
-            return negate(reduceNegationScope(negated.argument)).expression
-          }
-          return negate(negated.argument)
-        }
-      } else if (negated.type === 'ExpressionStatement') {
-        /* remove parens */
-        return negate({
-          type: 'ExpressionStatement',
-          expression: negated.expression
-        }).expression
-      } else if (negated.type === 'QuantifiedExpression') {
-        return negate(t.argument)
-      } else {
-        return t
+      let n = 1
+      if (negated.argument.type === 'QuantifiedExpression') {
+        negated.argument.expression = lib.collapseNegations(negated.argument.expression)
       }
-    } else throw new Error(`Unknown operator: ${t.operator}`)
-  })
-  .default(function (t) {
-    return t
-  })
+      while ((negated.argument.type === 'UnaryExpression') &&
+      (negated.argument.operator === 'Negation')) {
+        negated = negated.argument
+        ++n
+      }
+      return (n % 2) ? negated.argument : lib.negate(negated.argument)
+    }
+  ).method('collapseNegation',
+    (t) => t.argument.type === 'ExpressionStatement',
+    (t) => lib.negate(t.argument)
+  ).method('collapseNegation',
+    (t) => t.argument.type === 'QuantifiedExpression',
+    (t) => {
+      t.argument = lib.collapseNegations(lib.negate(t.argument))
+      t.argument.expression = lib.collapseNegations(t.argument.expression)
+      return t.argument
+    }
+  ).method('collapseNegation',
+    (t) => true,
+    (t) => t
+  )
+
+lib = lib
+  .method('collapseNegations',
+    (t) => t.type === 'BinaryExpression',
+    (t) => {
+      t.left = lib.collapseNegations(t.left)
+      t.right = lib.collapseNegations(t.right)
+      return t
+    }
+  )
+  .method('collapseNegations',
+    (t) => (t.type === 'UnaryExpression') && (t.operator === 'Negation'),
+    (t) => lib.collapseNegation(t)
+  ).method('collapseNegations',
+    (t) => (t.type === 'QuantifiedExpression'),
+    (t) => {
+      t.expression = lib.collapseNegations(t.expression)
+      return t
+    }
+  ).method('collapseNegations',
+    (t) => t.type === 'ExpressionStatement',
+    (t) => expressionWrap(lib.collapseNegations(t.expression))
+  ).method('collapseNegations',
+    (t) => true,
+    (t) => t
+  )
+
+export default lib
