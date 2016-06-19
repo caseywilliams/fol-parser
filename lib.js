@@ -160,6 +160,12 @@ lib = lib
     (t) => t.type === 'ExpressionStatement',
     (t) => expressionWrap(lib.collapseNegations(t.expression))
   ).method('collapseNegations',
+    (t) => ['FunctionExpression', 'Predicate'].indexOf(t.type) >= 0,
+    (t) => {
+      t.arguments = t.arguments.map(lib.collapseNegations)
+      return t
+    }
+  ).method('collapseNegations',
     (t) => true,
     (t) => t
   )
