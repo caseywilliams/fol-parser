@@ -198,82 +198,78 @@ lib = lib
 
 lib = lib
   .method('makeReplacement',
-    (t) => ['Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
-    (t) => {
-      t.arguments = t.arguments.map(lib.makeReplacement)
+    (t, from, to) => ['Predicate', 'FunctionExpression'].indexOf(t.type) >= 0,
+    (t, from, to) => {
+      t.arguments = t.arguments.map((arg) => lib.makeReplacement(arg, from, to))
       return t
     }
   ).method('makeReplacement',
-    (t) => t.type === 'VariableOrConstant',
-    (t) => {
-      if (t.name === lib.toReplace) {
-        t.name = lib.replacement ? lib.replacement : t.name
-      }
+    (t, from, to) => t.type === 'VariableOrConstant',
+    (t, from, to) => {
+      if (to && t.name === from) t.name = to
       return t
     }
   ).method('makeReplacement',
-    (t) => ['QuantifiedExpression', 'ExpressionStatement'].indexOf(t.type) >= 0,
-    (t) => {
-      t.expression = lib.makeReplacement(t.expression)
+    (t, from, to) => ['QuantifiedExpression', 'ExpressionStatement'].indexOf(t.type) >= 0,
+    (t, from, to) => {
+      t.expression = lib.makeReplacement(t.expression, from, to)
       return t
     }
   ).method('makeReplacement',
-    (t) => t.type === 'BinaryExpression',
-    (t) => {
-      t.left = lib.makeReplacement(t.left)
-      t.right = lib.makeReplacement(t.right)
+    (t, from, to) => t.type === 'BinaryExpression',
+    (t, from, to) => {
+      t.left = lib.makeReplacement(t.left, from, to)
+      t.right = lib.makeReplacement(t.right, from, to)
       return t
     }
   ).method('makeReplacement',
-    (t) => true,
-    (t) => t
+    (t, from, to) => true,
+    (t, from, to) => t
   )
 
-lib = lib.property('scope', [])
-  .property('toReplace', null)
-  .property('replacement', null)
-  .method('renameVariables',
-    (t) => t.type === 'QuantifiedExpression',
-    (t) => {
+lib = lib.method('renameVariables',
+    (t, scope = []) => t.type === 'QuantifiedExpression',
+    (t, scope = []) => {
       const quantified = t.variable.name.charCodeAt(0)
-      if (lib.scope.indexOf(quantified) >= 0) {
+      if (scope.indexOf(quantified) >= 0) {
         let charCode
         while (true) {
           charCode = 65 + (Math.random() % 25)
-          if (lib.scope.indexOf(charCode) < 0) break
+          if (scope.indexOf(charCode) < 0) break
         }
-        lib.toReplace = t.variable.name
-        lib.replacement = String.fromCharCode(charCode).toLowerCase()
-        t.variable.name = lib.replacement
-        t.expression = lib.makeReplacement(t.expression)
-        lib.scope.push(charCode)
+        const from = t.variable.name
+        const to = String.fromCharCode(charCode).toLowerCase()
+        t.variable.name = to
+        t.expression = lib.makeReplacement(t.expression, from, to)
+        scope.push(charCode)
       } else {
-        lib.scope.push(quantified)
-        t.expression = lib.renameVariables(t.expression)
+        scope.push(quantified)
+        t.expression = lib.renameVariables(t.expression, scope)
       }
       return t
     }
   ).method('renameVariables',
-    (t) => t.type === 'BinaryExpression',
-    (t) => {
-      t.left = lib.renameVariables(t.left)
-      t.right = lib.renameVariables(t.right)
+    (t, scope = []) => t.type === 'BinaryExpression',
+    (t, scope = []) => {
+      t.left = lib.renameVariables(t.left, scope)
+      t.right = lib.renameVariables(t.right, scope)
       return t
     }
   ).method('renameVariables',
-    (t) => t.type === 'ExpressionStatement',
-    (t) => {
-      t.expression = lib.renameVariables(t.expression)
+    (t, scope = []) => t.type === 'ExpressionStatement',
+    (t, scope = []) => {
+      t.expression = lib.renameVariables(t.expression, scope)
       return t
     }
   ).method('renameVariables',
-    (t) => t.type === 'FunctionExpression',
-    (t) => {
-      t.arguments = t.arguments.map(lib.renameVariables)
+    (t, scope = []) => t.type === 'FunctionExpression',
+    (t, scope = []) => {
+      t.arguments = t.arguments.map(lib.renameVariables, scope)
       return t
     }
   ).method('renameVariables',
-    (t) => true,
-    (t) => t
+    (t, scope = []) => true,
+    (t, scope = []) => t
   )
+
 export default lib

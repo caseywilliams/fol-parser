@@ -69,7 +69,8 @@ sinon.stub(Math, 'random').returns(25)
   .onCall(3).returns(28)
 
 test('Rename quantified variables', t => {
-  t.is(renameVariables('A.y f(y) | E.y g(y)'), 'A.y f(y) | E.a g(a)')
-  lib.scope = [] /** TODO: Must figure out some way to avoid this **/
-  t.is(renameVariables('A.y f(y) | E.y (g(z,y) & f(y)))'), 'A.y f(y) | E.b (g(z,b) & f(b))')
+  t.is(renameVariables('A.y f(y) | E.y g(y)'),
+    'A.y f(y) | E.a g(a)')
+  t.is(renameVariables('A.y f(y) | E.y (g(z,y) & f(y)))'),
+    'A.y f(y) | E.b (g(z,b) & f(b))')
 })
