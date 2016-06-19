@@ -276,9 +276,12 @@ lib = lib
       return t
     }
   ).method('renameVariables',
-    match.isFunction,
+    match.hasArguments,
     (t, scope = []) => {
-      t.arguments = t.arguments.map(lib.renameVariables, scope)
+      t.arguments = t.arguments.map((arg) => {
+        scope.push(arg.name.charCodeAt(0))
+        return lib.renameVariables(arg, scope)
+      })
       return t
     }
   ).method('renameVariables',

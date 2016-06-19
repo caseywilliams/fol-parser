@@ -73,9 +73,20 @@ test('Rename quantified variables', t => {
   t.is(renameVariables('A.y f(y) | E.y g(y)'),
     'A.y f(y) | E.a g(a)')
   Math.random.reset()
-  t.is(renameVariables('A.y f(y) | E.y (g(z,y) & f(y)))'),
-    'A.y f(y) | E.a (g(z,a) & f(a))')
+  t.is(renameVariables('A.y P(y) | E.y (Q(z,y) & f(y)))'),
+    'A.y P(y) | E.a (Q(z,a) & f(a))')
   Math.random.reset()
+})
+
+test('Rename with nested quantifiers', t => {
   t.is(renameVariables('A.x E.y A.z f(x,y,z) | E.x A.y E.z g(x,y,z)'),
     'A.x E.y A.z f(x,y,z) | E.a A.b E.c g(a,b,c)')
+  Math.random.reset()
+})
+
+test('Rename with free variable conflict', t => {
+  t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.w r(x,w)))'),
+    'A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.a r(x,a)))'
+  )
+  Math.random.reset()
 })
