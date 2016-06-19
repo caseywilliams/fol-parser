@@ -172,10 +172,14 @@ lib = lib
 
 lib = lib
   .method('removeImplications',
-    (t) => (t.type === 'BinaryExpression') && (t.operator === 'Implication'),
+    (t) => (t.type === 'BinaryExpression'),
     (t) => {
-      t.operator = 'Disjunction'
-      t.left = lib.negate(t.left)
+      t.left = lib.removeImplications(t.left)
+      t.right = lib.removeImplications(t.right)
+      if (t.operator === 'Implication') {
+        t.operator = 'Disjunction'
+        t.left = lib.negate(t.left)
+      }
       return t
     }
   ).method('removeImplications',

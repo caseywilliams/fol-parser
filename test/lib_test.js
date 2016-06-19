@@ -56,6 +56,7 @@ test('Negation scope reduction', t => {
 test('Remove implications', t => {
   t.is(removeImplications('P -> Q'), '!P | Q')
   t.is(removeImplications('(P -> Q)'), '(!P | Q)')
+  t.is(removeImplications('(P -> Q) -> (R -> S)'), '(P & !Q) | (!R | S)')
   t.is(removeImplications('A.x f(x) -> g(y)'), 'E.x !f(x) | g(y)')
   t.is(removeImplications('A.x (f(x) -> g(y))'), 'A.x (!f(x) | g(y))')
 })
