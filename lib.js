@@ -212,33 +212,58 @@ lib = lib
 lib = lib
   .method('makeReplacement',
     match.hasArguments,
-    (t, from, to) => {
-      t.arguments = t.arguments.map((arg) => lib.makeReplacement(arg, from, to))
+    (t, from, to, scope = []) => {
+      t.arguments = t.arguments.map((arg) => {
+        if (arg.name === to) {
+          /* unexpected variable or constant already used in scope */
+          let newTo = String.fromCharCode(charCodeNotIn(scope))
+          arg.name = newTo
+          return lib.makeReplacement(arg, from, to, scope)
+        } else {
+          return lib.makeReplacement(arg, from, to, scope)
+        }
+      })
       return t
     }
   ).method('makeReplacement',
     match.isVariable,
-    (t, from, to) => {
+    (t, from, to, scope = []) => {
       if (to && t.name === from) t.name = to
       return t
     }
   ).method('makeReplacement',
     match.hasExpression,
-    (t, from, to) => {
-      t.expression = lib.makeReplacement(t.expression, from, to)
+    (t, from, to, scope = []) => {
+      t.expression = lib.makeReplacement(t.expression, from, to, scope)
       return t
     }
   ).method('makeReplacement',
     match.isBinary,
-    (t, from, to) => {
-      t.left = lib.makeReplacement(t.left, from, to)
-      t.right = lib.makeReplacement(t.right, from, to)
+    (t, from, to, scope = []) => {
+      t.left = lib.makeReplacement(t.left, from, to, scope)
+      t.right = lib.makeReplacement(t.right, from, to, scope)
       return t
     }
   ).method('makeReplacement',
     match.default,
-    (t, from, to) => t
+    (t, from, to, scope = []) => t
   )
+
+function charCodeNotIn (scope) {
+  let charCode
+  if (scope.length >= 26) throw new Error('Formula too complex')
+  do {
+    charCode = Math.floor(Math.random() * 26)
+  } while (scope.indexOf(charCode + 97) >= 0)
+  return charCode + 97
+}
+
+function merge (scope, item) {
+  if (scope.indexOf(item) < 0) {
+    scope.push(item)
+  }
+  return scope
+}
 
 lib = lib
   .method('renameVariables',
@@ -246,18 +271,14 @@ lib = lib
     (t, scope = []) => {
       const quantified = t.variable.name.charCodeAt(0)
       if (scope.indexOf(quantified) >= 0) {
-        let charCode
-        while (true) {
-          charCode = 65 + (Math.random() % 25)
-          if (scope.indexOf(charCode) < 0) break
-        }
         const from = t.variable.name
-        const to = String.fromCharCode(charCode).toLowerCase()
+        const charCode = charCodeNotIn(scope)
+        const to = String.fromCharCode(charCode)
         t.variable.name = to
-        t.expression = lib.makeReplacement(lib.renameVariables(t.expression, scope), from, to)
-        scope.push(charCode)
+        t.expression = lib.makeReplacement(lib.renameVariables(t.expression, scope), from, to, scope)
+        merge(scope, charCode)
       } else {
-        scope.push(quantified)
+        merge(scope, quantified)
         t.expression = lib.renameVariables(t.expression, scope)
       }
       return t
@@ -278,8 +299,12 @@ lib = lib
   ).method('renameVariables',
     match.hasArguments,
     (t, scope = []) => {
+      if (match.isFunction(t)) {
+        /* Prevent using a function symbol as a variable name */
+        merge(scope, t.name.charCodeAt(0))
+      }
       t.arguments = t.arguments.map((arg) => {
-        scope.push(arg.name.charCodeAt(0))
+        merge(scope, arg.name.charCodeAt(0))
         return lib.renameVariables(arg, scope)
       })
       return t

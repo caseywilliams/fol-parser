@@ -64,29 +64,31 @@ test('Remove implications', t => {
 })
 
 sinon.stub(Math, 'random')
-  .returns(25)
-  .onCall(1).returns(26)
-  .onCall(2).returns(27)
-  .onCall(3).returns(28)
+  .returns(0.99) // 'z'
+  .onCall(1).returns(0.95) // 'y'
+  .onCall(2).returns(0.90) // 'x'
+  .onCall(3).returns(0.85) // 'w'
+  .onCall(4).returns(0.80) // 'v'
+  .onCall(5).returns(0.75) // 'u'
 
 test('Rename quantified variables', t => {
   t.is(renameVariables('A.y f(y) | E.y g(y)'),
-    'A.y f(y) | E.a g(a)')
+    'A.y f(y) | E.z g(z)')
   Math.random.reset()
   t.is(renameVariables('A.y P(y) | E.y (Q(z,y) & f(y)))'),
-    'A.y P(y) | E.a (Q(z,a) & f(a))')
+    'A.y P(y) | E.z (Q(x,z) & f(z))')
   Math.random.reset()
 })
 
 test('Rename with nested quantifiers', t => {
   t.is(renameVariables('A.x E.y A.z f(x,y,z) | E.x A.y E.z g(x,y,z)'),
-    'A.x E.y A.z f(x,y,z) | E.a A.b E.c g(a,b,c)')
+    'A.x E.y A.z f(x,y,z) | E.w A.u E.t g(w,u,t)')
   Math.random.reset()
 })
 
 test('Rename with free variable conflict', t => {
   t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.w r(x,w)))'),
-    'A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.a r(x,a)))'
+    'A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.u r(x,u)))'
   )
   Math.random.reset()
 })
