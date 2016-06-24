@@ -48,17 +48,11 @@ let lib = _.environment()
     match.isNegation,
     (t) => strings[t.operator] + lib.stringify(t.argument)
   ).method('stringify',
-    match.isFunction,
-    (t) => {
-      const args = t.arguments.map(lib.stringify)
-      return t.name + '(' + args.join(',') + ')'
-    }
-  ).method('stringify',
-    match.isPredicate,
+    match.hasArguments,
     (t) => {
       if (t.arguments.length) {
         const args = t.arguments.map(lib.stringify)
-        return t.name + '(' + args.join(',') + ')'
+        return t.name + '(' + args.join(', ') + ')'
       } else return t.name
     }
   ).method('stringify',
@@ -216,8 +210,7 @@ lib = lib
       t.arguments = t.arguments.map((arg) => {
         if (arg.name === to) {
           /* unexpected variable or constant already used in scope */
-          let newTo = String.fromCharCode(charCodeNotIn(scope))
-          arg.name = newTo
+          arg.name = String.fromCharCode(charCodeNotIn(scope))
           return lib.makeReplacement(arg, from, to, scope)
         } else {
           return lib.makeReplacement(arg, from, to, scope)
@@ -253,9 +246,9 @@ function charCodeNotIn (scope) {
   let charCode
   if (scope.length >= 26) throw new Error('Formula too complex')
   do {
-    charCode = Math.floor(Math.random() * 26)
-  } while (scope.indexOf(charCode + 97) >= 0)
-  return charCode + 97
+    charCode = Math.floor(Math.random() * 26) + 97
+  } while (scope.indexOf(charCode) >= 0)
+  return charCode
 }
 
 function merge (scope, item) {

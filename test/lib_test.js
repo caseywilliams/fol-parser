@@ -9,7 +9,7 @@ const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s))
 const renameVariables = (s) => lib.stringify(lib.renameVariables(parse(s)))
 
 test('Basic string output', t => {
-  const s = 'E.x f(x) | A.y (!Q -> P(y,z)) & R'
+  const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
   t.is(lib.stringify(parse(s)), s)
 })
 
@@ -75,20 +75,20 @@ test('Rename quantified variables', t => {
   t.is(renameVariables('A.y f(y) | E.y g(y)'),
     'A.y f(y) | E.z g(z)')
   Math.random.reset()
-  t.is(renameVariables('A.y P(y) | E.y (Q(z,y) & f(y)))'),
-    'A.y P(y) | E.z (Q(x,z) & f(z))')
+  t.is(renameVariables('A.y P(y) | E.y (Q(z, y) & f(y)))'),
+    'A.y P(y) | E.z (Q(x, z) & f(z))')
   Math.random.reset()
 })
 
 test('Rename with nested quantifiers', t => {
-  t.is(renameVariables('A.x E.y A.z f(x,y,z) | E.x A.y E.z g(x,y,z)'),
-    'A.x E.y A.z f(x,y,z) | E.w A.u E.t g(w,u,t)')
+  t.is(renameVariables('A.x E.y A.z f(x, y, z) | E.x A.y E.z g(x, y, z)'),
+    'A.x E.y A.z f(x, y, z) | E.w A.u E.t g(w, u, t)')
   Math.random.reset()
 })
 
 test('Rename with free variable conflict', t => {
-  t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.w r(x,w)))'),
-    'A.x (p(x) -> E.y A.z ((p(w) | q(x,y)) -> A.u r(x,u)))'
+  t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.w r(x, w)))'),
+    'A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.u r(x, u)))'
   )
   Math.random.reset()
 })
