@@ -105,10 +105,7 @@ lib = lib
     match.isQuantified,
     (t) => {
       t.quantifier = (t.quantifier === 'Universal') ? 'Existential' : 'Universal'
-      if (t.expression.type === 'ExpressionStatement') {
-        /* Maintain existing parens around quantified expressions */
-        t.expression = negationWrap(t.expression)
-      } else t.expression = lib.negate(t.expression)
+      t.expression = lib.negate(t.expression)
       return t
     }
   )
@@ -120,8 +117,10 @@ lib = lib
     (t) => {
       let negated = t.argument
       let n = 1
-      if (negated.argument.type === 'QuantifiedExpression') {
+      if (match.isQuantified(negated.argument)) {
         negated.argument.expression = lib.collapseNegations(negated.argument.expression)
+      } else if (match.hasArguments(negated.argument)) {
+        negated.argument.arguments = negated.argument.arguments.map(lib.collapseNegations)
       }
       while ((negated.argument.type === 'UnaryExpression') &&
       (negated.argument.operator === 'Negation')) {
