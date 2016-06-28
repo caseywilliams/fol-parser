@@ -251,7 +251,9 @@ function charCodeNotIn (scope) {
 }
 
 function merge (scope, item) {
-  if (scope.indexOf(item) < 0) {
+  if (_.isArray(item)) {
+    item.map((i) => merge(scope, i))
+  } else if(scope.indexOf(item) < 0) {
     scope.push(item)
   }
   return scope
@@ -306,4 +308,43 @@ lib = lib
     (t, scope = []) => t
   )
 
+lib = lib
+  .method('collectNames',
+    match.isVariable,
+    (t, scope = []) => {
+      return merge(scope, t.name.charCodeAt(0))
+    }
+  ).method('collectNames',
+    match.hasArguments,
+    (t, scope = []) => {
+      if (match.isFunction(t)) {
+        scope = merge(scope, t.name.charCodeAt(0))
+      }
+      let args = t.arguments.map((arg) => lib.collectNames(arg, scope))
+      return scope
+    }
+  ).method('collectNames',
+    match.isBinary,
+    (t, scope = []) => {
+      scope = merge(scope, lib.collectNames(t.left))
+      scope = merge(scope, lib.collectNames(t.right))
+      return scope
+    }
+  ).method('collectNames',
+    match.isQuantified,
+    (t, scope = []) => {
+      scope = merge(scope, t.variable.name.charCodeAt(0))
+      scope = merge(scope, lib.collectNames(t.expression))
+      return scope
+    }
+  ).method('collectNames',
+    match.isExpression,
+    (t, scope = []) => merge(scope, lib.collectNames(t.expression))
+  ).method('collectNames',
+    match.isNegation,
+    (t, scope = []) => merge(scope, lib.collectNames(t.argument))
+  ).method('collectNames',
+    match.default,
+    (t, scope = []) => scope
+  )
 export default lib

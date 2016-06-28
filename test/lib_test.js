@@ -7,6 +7,8 @@ const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
 const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
 const renameVariables = (s) => lib.stringify(lib.renameVariables(parse(s)))
+const collectNames = (s) => lib.collectNames(parse(s))
+const asCharCodes = (a) => a.map((i) => i.charCodeAt(0))
 
 test('Basic string output', t => {
   const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
@@ -165,4 +167,28 @@ test('Renaming resolves any conflicts between free variable names and replacemen
 
   t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.w r(x, w)))'),
     'A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.v r(x, v)))')
+})
+
+test('Collect names from functions', t => {
+  t.deepEqual(collectNames('f(x, g(y, z))'), asCharCodes(['f', 'x', 'g', 'y', 'z']))
+})
+
+test('Collect names from predicates', t => {
+  t.deepEqual(collectNames('P(x, g(y, z))'), asCharCodes(['x', 'g', 'y', 'z']))
+})
+
+test('Collect names from binary expressions', t => {
+  t.deepEqual(collectNames('f(x) | g(y)'), asCharCodes(['f', 'x', 'g', 'y']))
+})
+
+test('Collect names from quantified expressions', t => {
+  t.deepEqual(collectNames('A.x f(x)'), asCharCodes(['x', 'f']))
+})
+
+test('Collect names from expression statements', t => {
+  t.deepEqual(collectNames('(P(x))'), asCharCodes(['x']))
+})
+
+test('Collect names from negated expressions', t => {
+  t.deepEqual(collectNames('!f(x)'), asCharCodes(['f', 'x']))
 })
