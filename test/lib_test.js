@@ -1,12 +1,10 @@
 import test from 'ava'
-import sinon from 'sinon'
 import lib from '../lib'
 import parse from '../parse'
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
 const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
-const renameVariables = (s) => lib.stringify(lib.renameVariables(parse(s)))
 const collectNames = (s) => lib.collectNames(parse(s))
 const asCharCodes = (a) => a.map((i) => i.charCodeAt(0))
 
@@ -107,66 +105,6 @@ test('Implication removal works correctly when either side is a quantified expre
 
 test('Implication removal works correctly within a quantified expression', t => {
   t.is(removeImplications('A.x (f(x) -> g(y))'), 'A.x (!f(x) | g(y))')
-})
-
-let sandbox
-
-test.beforeEach(t => {
-  sandbox = sinon.sandbox.create()
-})
-
-test.afterEach.always(t => {
-  sandbox.restore()
-})
-
-test('Conflicting variables are renamed for binary expressions', t => {
-  sandbox.stub(Math, 'random').returns(0.99) // 'z'
-  t.is(renameVariables('A.y f(y) | E.y g(y)'),
-    'A.y f(y) | E.z g(z)')
-})
-
-test('Names of existing variables cannot be used as replacement variable names', t => {
-  sandbox.stub(Math, 'random')
-    .returns(0.99) // 'z'
-    .onCall(1).returns(0.95) // 'y'
-    .onCall(2).returns(0.95) // 'x'
-  t.is(renameVariables('A.y f(y) | E.y z(y)'), 'A.y f(y) | E.z x(z)')
-})
-
-test('If a replacement variable name conflicts with a free variable name, the free variable is renamed, too', t => {
-  sandbox.stub(Math, 'random')
-    .returns(0.99) // 'z'
-    .onCall(1).returns(0.95) // 'y'
-    .onCall(2).returns(0.90) // 'x'
-
-  t.is(renameVariables('A.y P(y) | E.y (Q(z, y) & f(y)))'),
-    'A.y P(y) | E.z (Q(x, z) & f(z))')
-})
-
-test('Renaming works for nested quantifiers', t => {
-  sandbox.stub(Math, 'random')
-    .returns(0.99) // 'z'
-    .onCall(1).returns(0.95) // 'y'
-    .onCall(2).returns(0.90) // 'x'
-    .onCall(3).returns(0.85) // 'w'
-    .onCall(4).returns(0.81) // 'v'
-    .onCall(5).returns(0.80) // 'u'
-
-  t.is(renameVariables('A.x E.y A.z f(x, y, z) | E.x A.y E.z g(x, y, z)'),
-    'A.x E.y A.z f(x, y, z) | E.w A.v E.u g(w, v, u)')
-})
-
-test('Renaming resolves any conflicts between free variable names and replacement variable names', t => {
-  sandbox.stub(Math, 'random')
-    .returns(0.99) // 'z'
-    .onCall(1).returns(0.95) // 'y'
-    .onCall(2).returns(0.90) // 'x'
-    .onCall(3).returns(0.85) // 'w'
-    .onCall(4).returns(0.81) // 'v'
-    .onCall(5).returns(0.80) // 'u'
-
-  t.is(renameVariables('A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.w r(x, w)))'),
-    'A.x (p(x) -> E.y A.z ((p(w) | q(x, y)) -> A.v r(x, v)))')
 })
 
 test('Collect names from functions', t => {
