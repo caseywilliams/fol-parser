@@ -1,12 +1,12 @@
 import lib from '../lib'
 import parse from '../parse'
+import { asCharCodes } from './_helpers'
 import test from 'ava'
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
 const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
 const collectNames = (s) => lib.collectNames(parse(s))
-const asCharCodes = (a) => a.map((i) => i.charCodeAt(0))
 
 test('Basic string output', t => {
   const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
