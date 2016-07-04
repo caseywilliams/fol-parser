@@ -1,6 +1,6 @@
-import test from 'ava'
 import lib from '../lib'
 import parse from '../parse'
+import test from 'ava'
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))

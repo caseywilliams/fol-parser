@@ -242,6 +242,9 @@ lib = lib
       if (match.isFunction(t)) {
         scope = merge(scope, t.name.charCodeAt(0))
       }
+      for (let arg of t.arguments) {
+        scope = merge(scope, lib.collectNames(arg, scope))
+      }
       return scope
     }
   ).method('collectNames',
