@@ -235,43 +235,88 @@ function addName (t, scope = {}) {
 lib = lib
   .method('collectNames',
     match.isVariable,
-    (t, scope = {}) => {
-      return addName(t, scope)
+    (t, names = {}) => {
+      return addName(t, names)
     }
   ).method('collectNames',
     match.hasArguments,
-    (t, scope = {}) => {
+    (t, names = {}) => {
       if (match.isFunction(t)) {
-        scope = addName(t, scope)
+        names = addName(t, names)
       }
       for (let arg of t.arguments) {
-        scope = Object.assign(scope, lib.collectNames(arg, scope))
+        names = Object.assign(names, lib.collectNames(arg, names))
       }
-      return scope
+      return names
     }
   ).method('collectNames',
     match.isBinary,
-    (t, scope = {}) => {
-      scope = Object.assign(scope, lib.collectNames(t.left, scope))
-      scope = Object.assign(scope, lib.collectNames(t.right, scope))
-      return scope
+    (t, names = {}) => {
+      names = Object.assign(names, lib.collectNames(t.left, names))
+      names = Object.assign(names, lib.collectNames(t.right, names))
+      return names
     }
   ).method('collectNames',
     match.isQuantified,
-    (t, scope = {}) => {
-      scope = addName(t.variable, scope)
-      scope = Object.assign(scope, lib.collectNames(t.expression, scope))
-      return scope
+    (t, names = {}) => {
+      names = addName(t.variable, names)
+      names = Object.assign(names, lib.collectNames(t.expression, names))
+      return names
     }
   ).method('collectNames',
     match.isExpression,
-    (t, scope = {}) => Object.assign(scope, lib.collectNames(t.expression, scope))
+    (t, names = {}) => Object.assign(names, lib.collectNames(t.expression, names))
   ).method('collectNames',
     match.isNegation,
-    (t, scope = {}) => Object.assign(scope, lib.collectNames(t.argument, scope))
+    (t, names = {}) => Object.assign(names, lib.collectNames(t.argument, names))
   ).method('collectNames',
     match.default,
-    (t, scope = {}) => scope
+    (t, names = {}) => names
+  )
+
+lib = lib
+  .method('markFree',
+    match.isVariable,
+    (t, names, quantified = []) => {
+      t.free = !(quantified.includes(t.name))
+      return t
+    }
+  ).method('markFree',
+    match.hasArguments,
+    (t, names, quantified = []) => {
+      t.arguments = t.arguments.map(a => lib.markFree(a, names, quantified))
+      return t
+    }
+  ).method('markFree',
+    match.isBinary,
+    (t, names, quantified = []) => {
+      t.left = lib.markFree(t.left, names, quantified)
+      t.right = lib.markFree(t.right, names, quantified)
+      return t
+    }
+  ).method('markFree',
+    match.isExpression,
+    (t, names, quantified = []) => {
+      t.expression = lib.markFree(t.expression, names, quantified)
+      return t
+    }
+  ).method('markFree',
+    match.isQuantified,
+    (t, names, quantified = []) => {
+      quantified.push(t.variable.name)
+      t.expression = lib.markFree(t.expression, names, quantified)
+      t.variable.free = false
+      return t
+    }
+  ).method('markFree',
+    match.isNegation,
+    (t, names, quantified = []) => {
+      t.argument = lib.markFree(t.argument, names, quantified)
+      return t
+    }
+  ).method('markFree',
+    match.default,
+    (t, names, quantified = []) => t
   )
 
 export default lib

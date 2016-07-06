@@ -6,6 +6,7 @@ const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
 const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
 const collectNames = (s) => lib.collectNames(parse(s))
+const markFree = (s) => lib.markFree(parse(s))
 
 test('Basic string output', t => {
   const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
@@ -156,4 +157,21 @@ test('Collect names from negated expressions', t => {
 
 test('Throw an error if a function with the same name as a variable is encountered', t => {
   t.throws(() => collectNames('f(x) | g(f)'), 'Found conflict between variable and function name (f).')
+})
+
+test('Mark free variables in quantified expressions', t => {
+  let marked = markFree('A.x f(x, y, g(y))')
+  t.is(marked.variable.free, false)
+  t.is(marked.expression.arguments[0].free, false)
+  t.is(marked.expression.arguments[1].free, true)
+  t.is(marked.expression.arguments[2].arguments[0].free, true)
+})
+
+test('Mark free variables in nested quantified expressions', t => {
+  let marked = markFree('A.x E.y (f(x) | !P(x, y, z))')
+  let expr = marked.expression.expression.expression // f(x) | !P(x, y, z)
+  t.is(expr.left.arguments[0].free, false)
+  t.is(expr.right.argument.arguments[0].free, false)
+  t.is(expr.right.argument.arguments[1].free, false)
+  t.is(expr.right.argument.arguments[2].free, true)
 })

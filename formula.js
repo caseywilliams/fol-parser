@@ -21,6 +21,10 @@ export default class Formula {
     this.source = lib.collapseNegations(this.source)
   }
 
+  rename () {
+    this.source = lib.markFree(this.source)
+  }
+
   get stringified () {
     return lib.stringify(this.source)
   }
