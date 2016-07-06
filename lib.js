@@ -28,11 +28,6 @@ const negationWrap = (t) => ({
   argument: t
 })
 
-const expressionWrap = (t) => ({
-  type: 'ExpressionStatement',
-  expression: t
-})
-
 let lib = _.environment()
   .method('stringify',
     match.isVariable,
@@ -73,7 +68,8 @@ lib = lib
   ).method('negate',
     match.isExpression,
     (t) => {
-      return expressionWrap(lib.negate(t.expression))
+      t.expression = lib.negate(t.expression)
+      return t
     }
   ).method('negate',
     match.isBinary,
@@ -164,7 +160,10 @@ lib = lib
     }
   ).method('collapseNegations',
     match.isExpression,
-    (t) => expressionWrap(lib.collapseNegations(t.expression))
+    (t) => {
+      t.expression = lib.collapseNegations(t.expression)
+      return t
+    }
   ).method('collapseNegations',
     match.hasArguments,
     (t) => {
@@ -190,7 +189,10 @@ lib = lib
     }
   ).method('removeImplications',
     match.isExpression,
-    (t) => expressionWrap(lib.removeImplications(t.expression))
+    (t) => {
+      t.expression = lib.removeImplications(t.expression)
+      return t
+    }
   ).method('removeImplications',
     (t) => t.type === 'QuantifiedExpression',
     (t) => {
@@ -201,25 +203,6 @@ lib = lib
     match.default,
     (t) => t
   )
-
-const allChars = Array.from(new Array(26), (x, i) => i + 97)
-
-function charCodeNotIn (scope) {
-  let index = 0
-  let c
-  if (scope.length) {
-    if (scope.length > 25) throw new Error('Formula too complex')
-    let last = Math.max.apply(null, scope)
-    if (allChars.indexOf(last) >= 0) {
-      index = allChars.indexOf(last)
-    }
-  }
-  while (true) {
-    c = allChars[index]
-    if (scope.indexOf(c) < 0) return c
-    else index = ++index % 26
-  }
-}
 
 function addName (t, scope = {}) {
   if (scope[t.name]) {
@@ -317,6 +300,54 @@ lib = lib
   ).method('markFree',
     match.default,
     (t, names, quantified = []) => t
+  )
+
+lib = lib
+  .method('rename',
+    match.isVariable,
+    (t, scope) => {
+      scope.push(t.name)
+      t.name = scope.check(t.name)
+      return t
+    }
+  ).method('rename',
+    match.hasArguments,
+    (t, scope) => {
+      t.arguments = t.arguments.map((a) => lib.rename(a, scope))
+      return t
+    }
+  ).method('rename',
+    match.isQuantified,
+    (t, scope) => {
+      scope.push(t.variable.name)
+      t.variable.name = scope.check(t.variable.name)
+      scope.quantified.push(t.variable.name)
+      t.expression = lib.rename(t.expression, scope)
+      scope.quantified.pop()
+      return t
+    }
+  ).method('rename',
+    match.isBinary,
+    (t, scope) => {
+      t.left = lib.rename(t.left, scope)
+      t.right = lib.rename(t.right, scope)
+      return t
+    }
+  ).method('rename',
+    match.isExpression,
+    (t, scope) => {
+      t.expression = lib.rename(t.expression, scope)
+      return t
+    }
+  ).method('rename',
+    match.isNegation,
+    (t, scope) => {
+      t.argument = lib.rename(t.argument, scope)
+      return t
+    }
+  ).method('rename',
+    match.default,
+    (t, scope) => t
   )
 
 export default lib

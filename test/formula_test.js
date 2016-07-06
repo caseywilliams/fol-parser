@@ -43,3 +43,13 @@ test('Collapsed version can be retrieved without affecting the source', t => {
   const f = new Formula('A.y P(f(y), z) | !!Q(x)')
   t.is(f.collapsed, 'A.y P(f(y), z) | Q(x)')
 })
+
+test('Rename conflicting quantified variables', t => {
+  const f = new Formula('P(x) & A.x (Q(x) -> E.y R(x, y) | !E.y P(y))')
+  t.is(f.rename().stringified, 'P(x) & A.z (Q(z) -> E.y R(z, y) | !E.w P(w))')
+})
+
+test('Rename nested quantified variables', t => {
+  const f = new Formula('A.x A.y E.z f(w, x, y, z) | !E.x !E.y !A.z f(w, x, y, z)')
+  t.is(f.rename().stringified, 'A.x A.y E.z f(w, x, y, z) | !E.v !E.u !A.t f(s, v, u, t)')
+})
