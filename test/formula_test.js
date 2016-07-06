@@ -1,6 +1,7 @@
 import Formula from '../formula'
+import lib from '../lib'
+import parse from '../parse'
 import test from 'ava'
-import { asCharCodes } from './_helpers'
 
 test('Formula can be stringified', t => {
   const f = new Formula('A.y P(f(y), z) | !!Q(x)')
@@ -8,8 +9,9 @@ test('Formula can be stringified', t => {
 })
 
 test('Formula keeps track of used variable/constant/function names', t => {
-  const f = new Formula('A.y P(f(y), z) | !!Q(x)')
-  t.deepEqual(f.names, asCharCodes(['y', 'f', 'z', 'x']))
+  const s = 'A.y P(f(y), z) | !!Q(x)'
+  const f = new Formula(s)
+  t.deepEqual(f.names, lib.collectNames(parse(s)))
 })
 
 test('Formula can be negated', t => {

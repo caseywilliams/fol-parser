@@ -1,6 +1,5 @@
 import lib from '../lib'
 import parse from '../parse'
-import { asCharCodes } from './_helpers'
 import test from 'ava'
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
@@ -108,25 +107,53 @@ test('Implication removal works correctly within a quantified expression', t => 
 })
 
 test('Collect names from functions', t => {
-  t.deepEqual(collectNames('f(x, g(y, z))'), asCharCodes(['f', 'x', 'g', 'y', 'z']))
+  t.deepEqual(collectNames('f(x, g(y, z))'), {
+    f: 'FunctionExpression',
+    x: 'VariableOrConstant',
+    g: 'FunctionExpression',
+    y: 'VariableOrConstant',
+    z: 'VariableOrConstant'
+  })
 })
 
 test('Collect names from predicates', t => {
-  t.deepEqual(collectNames('P(x, g(y, z))'), asCharCodes(['x', 'g', 'y', 'z']))
+  t.deepEqual(collectNames('P(x, g(y, z))'), {
+    x: 'VariableOrConstant',
+    g: 'FunctionExpression',
+    y: 'VariableOrConstant',
+    z: 'VariableOrConstant'
+  })
 })
 
 test('Collect names from binary expressions', t => {
-  t.deepEqual(collectNames('f(x) | g(y)'), asCharCodes(['f', 'x', 'g', 'y']))
+  t.deepEqual(collectNames('f(x) | g(y)'), {
+    f: 'FunctionExpression',
+    x: 'VariableOrConstant',
+    g: 'FunctionExpression',
+    y: 'VariableOrConstant'
+  })
 })
 
 test('Collect names from quantified expressions', t => {
-  t.deepEqual(collectNames('A.x f(x)'), asCharCodes(['x', 'f']))
+  t.deepEqual(collectNames('A.x f(x)'), {
+    x: 'VariableOrConstant',
+    f: 'FunctionExpression'
+  })
 })
 
 test('Collect names from expression statements', t => {
-  t.deepEqual(collectNames('(P(x))'), asCharCodes(['x']))
+  t.deepEqual(collectNames('(P(x))'), {
+    x: 'VariableOrConstant'
+  })
 })
 
 test('Collect names from negated expressions', t => {
-  t.deepEqual(collectNames('!f(x)'), asCharCodes(['f', 'x']))
+  t.deepEqual(collectNames('!f(x)'), {
+    f: 'FunctionExpression',
+    x: 'VariableOrConstant'
+  })
+})
+
+test('Throw an error if a function with the same name as a variable is encountered', t => {
+  t.throws(() => collectNames('f(x) | g(f)'), 'Found conflict between variable and function name (f).')
 })

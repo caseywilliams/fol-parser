@@ -221,11 +221,13 @@ function charCodeNotIn (scope) {
   }
 }
 
-function merge (scope, item) {
-  if (_.isArray(item)) {
-    item.map((i) => merge(scope, i))
-  } else if (scope.indexOf(item) < 0) {
-    scope.push(item)
+function addName (t, scope = {}) {
+  if (scope[t.name]) {
+    if (scope[t.name] !== t.type) {
+      throw new Error(`Found conflict between variable and function name (${t.name}).`)
+    }
+  } else {
+    scope[t.name] = t.type
   }
   return scope
 }
@@ -233,43 +235,43 @@ function merge (scope, item) {
 lib = lib
   .method('collectNames',
     match.isVariable,
-    (t, scope = []) => {
-      return merge(scope, t.name.charCodeAt(0))
+    (t, scope = {}) => {
+      return addName(t, scope)
     }
   ).method('collectNames',
     match.hasArguments,
-    (t, scope = []) => {
+    (t, scope = {}) => {
       if (match.isFunction(t)) {
-        scope = merge(scope, t.name.charCodeAt(0))
+        scope = addName(t, scope)
       }
       for (let arg of t.arguments) {
-        scope = merge(scope, lib.collectNames(arg, scope))
+        scope = Object.assign(scope, lib.collectNames(arg, scope))
       }
       return scope
     }
   ).method('collectNames',
     match.isBinary,
-    (t, scope = []) => {
-      scope = merge(scope, lib.collectNames(t.left))
-      scope = merge(scope, lib.collectNames(t.right))
+    (t, scope = {}) => {
+      scope = Object.assign(scope, lib.collectNames(t.left, scope))
+      scope = Object.assign(scope, lib.collectNames(t.right, scope))
       return scope
     }
   ).method('collectNames',
     match.isQuantified,
-    (t, scope = []) => {
-      scope = merge(scope, t.variable.name.charCodeAt(0))
-      scope = merge(scope, lib.collectNames(t.expression))
+    (t, scope = {}) => {
+      scope = addName(t.variable, scope)
+      scope = Object.assign(scope, lib.collectNames(t.expression, scope))
       return scope
     }
   ).method('collectNames',
     match.isExpression,
-    (t, scope = []) => merge(scope, lib.collectNames(t.expression))
+    (t, scope = {}) => Object.assign(scope, lib.collectNames(t.expression, scope))
   ).method('collectNames',
     match.isNegation,
-    (t, scope = []) => merge(scope, lib.collectNames(t.argument))
+    (t, scope = {}) => Object.assign(scope, lib.collectNames(t.argument, scope))
   ).method('collectNames',
     match.default,
-    (t, scope = []) => scope
+    (t, scope = {}) => scope
   )
 
 export default lib
