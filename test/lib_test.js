@@ -7,6 +7,8 @@ const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
 const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
 const collectNames = (s) => lib.collectNames(parse(s))
 const markFree = (s) => lib.markFree(parse(s))
+const containsFree = (s, x) => lib.containsFree(parse(s), x)
+const moveQuantifiersLeft = (s) => lib.stringify(lib.moveQuantifiersLeft(parse(s)))
 
 test('Basic string output', t => {
   const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
@@ -174,4 +176,32 @@ test('Mark free variables in nested quantified expressions', t => {
   t.is(expr.right.argument.arguments[0].free, false)
   t.is(expr.right.argument.arguments[1].free, false)
   t.is(expr.right.argument.arguments[2].free, true)
+})
+
+test('Determine whether a variable appears free in a function', t => {
+  t.is(containsFree('A.y f(x, y)', 'x'), true)
+  t.is(containsFree('A.x f(x, y)', 'x'), false)
+  t.is(containsFree('A.x f(y, z)', 'x'), false)
+})
+
+test('Determine whether a variable appears free in a binary expression', t => {
+  t.is(containsFree('A.y P(x, y) | E.x Q(x, y)', 'y'), true)
+  t.is(containsFree('A.y P(x, y) | E.x Q(x, y)', 'x'), true)
+})
+
+test('Determine whether a variable appears free in a negated expression', t => {
+  t.is(containsFree('!A.y P(x, y)', 'x'), true)
+})
+
+test('Determine whether a variable appears free in an expression statement', t => {
+  t.is(containsFree('!A.y (P(x, y) | f(x))', 'x'), true)
+})
+
+test('Quantifiers can be moved left where appropriate', t => {
+  t.is(moveQuantifiersLeft('P | A.x Q(x)'), 'A.x (P | Q(x))')
+  t.is(moveQuantifiersLeft('P & E.x Q(x)'), 'E.x (P & Q(x))')
+})
+
+test('Quantifiers are not moved left when the quantified variable appears free at left', t => {
+  t.is(moveQuantifiersLeft('P(x) | A.x Q(x)'), 'P(x) | A.x Q(x)')
 })

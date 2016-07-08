@@ -350,4 +350,91 @@ lib = lib
     (t, scope) => t
   )
 
+lib = lib
+  .method('containsFree',
+    match.isVariable,
+    (t, varName, quantified = []) => {
+      if (t.name !== varName) return false
+      return (quantified.indexOf(t.name) < 0)
+    }
+  ).method('containsFree',
+    match.hasArguments,
+    (t, varName, quantified = []) => {
+      for (let arg of t.arguments) {
+        if (lib.containsFree(arg, varName, quantified)) return true
+      }
+      return false
+    }
+  ).method('containsFree',
+    match.isNegation,
+    (t, varName, quantified = []) =>
+      lib.containsFree(t.argument, varName, quantified)
+  ).method('containsFree',
+    match.isExpression,
+    (t, varName, quantified = []) =>
+      lib.containsFree(t.expression, varName, quantified)
+  ).method('containsFree',
+    match.isBinary,
+    (t, varName, quantified = []) => (
+      lib.containsFree(t.left, varName, quantified) ||
+        lib.containsFree(t.right, varName, quantified)
+    )
+  ).method('containsFree',
+    match.isQuantified,
+    (t, varName, quantified = []) => {
+      quantified.push(t.variable.name)
+      const result = lib.containsFree(t.expression, varName, quantified)
+      quantified.pop()
+      return result
+    }
+  ).method('containsFree',
+    match.default,
+    (t, varName, quantified = []) => false
+  )
+
+/**
+ * Test whether to apply equivalencies in moveQuantifiersLeft
+ */
+function hasLeftDestinedQuantifier(t) {
+  if (!match.isBinary(t)) return false
+  if (t.operator === 'Implication') return false
+  if (t.right.type !== 'QuantifiedExpression') return false
+  if (lib.containsFree(t, t.right.variable)) return false
+  return true
+}
+
+/**
+ * Move quantifiers left using equivalencies
+ * (Provided x is not free in P):
+ * - P | A.x Q(x) == A.x (P | Q(x))
+ * - P | E.x Q(x) == E.x (P | Q(x))
+ * - P & A.x Q(x) == A.x (P & Q(x))
+ * - P & E.x Q(x) == E.x (P & Q(x))
+ * (For prenex forms)
+ */
+lib = lib
+  .method('moveQuantifiersLeft',
+    match.isBinary,
+    (t) => {
+      if (hasLeftDestinedQuantifier(t)) {
+          let out = {}
+          Object.assign(out, t.right)
+          out.expression = {
+            type: 'ExpressionStatement',
+            expression: {
+              type: 'BinaryExpression',
+              operator: t.operator,
+              left: t.left,
+              right: t.right.expression
+            }
+          }
+          return out
+      }
+      return t
+    }
+  ).method('moveQuantifiersLeft',
+    match.default,
+    (t) => t
+  )
+
 export default lib
