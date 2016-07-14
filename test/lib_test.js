@@ -187,6 +187,7 @@ test('Determine whether a variable appears free in a function', t => {
 test('Determine whether a variable appears free in a binary expression', t => {
   t.is(containsFree('A.y P(x, y) | E.x Q(x, y)', 'y'), true)
   t.is(containsFree('A.y P(x, y) | E.x Q(x, y)', 'x'), true)
+  t.is(containsFree('P(x) | A.x Q(x)', 'x'), true)
 })
 
 test('Determine whether a variable appears free in a negated expression', t => {
@@ -197,11 +198,21 @@ test('Determine whether a variable appears free in an expression statement', t =
   t.is(containsFree('!A.y (P(x, y) | f(x))', 'x'), true)
 })
 
-test('Quantifiers can be moved left where appropriate', t => {
-  t.is(moveQuantifiersLeft('P | A.x Q(x)'), 'A.x (P | Q(x))')
-  t.is(moveQuantifiersLeft('P & E.x Q(x)'), 'E.x (P & Q(x))')
+test('Quantifiers are moved left in binary expressions where appropriate', t => {
+  t.is(moveQuantifiersLeft('P(y) | A.x Q(x)'), 'A.x (P(y) | Q(x))')
 })
 
-test('Quantifiers are not moved left when the quantified variable appears free at left', t => {
+test('Quantifiers are not moved left when the quantified variable appears free at the left of a binary expression', t => {
   t.is(moveQuantifiersLeft('P(x) | A.x Q(x)'), 'P(x) | A.x Q(x)')
+})
+
+test('Move quantifiers left with multiple quantifiers', t => {
+  t.is(moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z)'), 'E.x A.y A.z (f(x) & g(y) | h(z))')
+})
+
+test('Move quantifiers left with quantifiers first', t => {
+  t.is(
+    moveQuantifiersLeft('A.x A.y (!f(x, y) | E.z (f(x, z) & f(y, z)))'),
+    'A.x A.y E.z (!f(x, y) | f(x, z) & f(y, z))'
+  )
 })

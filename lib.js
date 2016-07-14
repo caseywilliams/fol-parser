@@ -395,12 +395,16 @@ lib = lib
 /**
  * Test whether to apply equivalencies in moveQuantifiersLeft
  */
-function hasLeftDestinedQuantifier(t) {
+function hasLeftDestinedQuantifier (t) {
   if (!match.isBinary(t)) return false
   if (t.operator === 'Implication') return false
   if (t.right.type !== 'QuantifiedExpression') return false
-  if (lib.containsFree(t, t.right.variable)) return false
+  if (lib.containsFree(t.left, t.right.variable.name)) return false
   return true
+}
+
+function unwrap (t) {
+  return (match.isExpression(t) ? t.expression : t)
 }
 
 /**
@@ -410,27 +414,51 @@ function hasLeftDestinedQuantifier(t) {
  * - P | E.x Q(x) == E.x (P | Q(x))
  * - P & A.x Q(x) == A.x (P & Q(x))
  * - P & E.x Q(x) == E.x (P & Q(x))
- * (For prenex forms)
+ * For prenex forms
  */
 lib = lib
   .method('moveQuantifiersLeft',
     match.isBinary,
     (t) => {
-      if (hasLeftDestinedQuantifier(t)) {
-          let out = {}
-          Object.assign(out, t.right)
+      t.right = lib.moveQuantifiersLeft(t.right)
+      t.left = lib.moveQuantifiersLeft(t.left)
+      if (!hasLeftDestinedQuantifier(t)) return t
+      let rightExpr = t.right
+      let leftExpr = t.left
+      let quantifiers = []
+      while (match.isQuantified(leftExpr)) {
+        quantifiers.push([leftExpr.quantifier, leftExpr.variable.name])
+        leftExpr = leftExpr.expression
+      }
+      while (match.isQuantified(rightExpr)) {
+        quantifiers.push([rightExpr.quantifier, rightExpr.variable.name])
+        rightExpr = rightExpr.expression
+      }
+      let out = {
+        type: 'BinaryExpression',
+        operator: t.operator,
+        left: unwrap(leftExpr),
+        right: unwrap(rightExpr)
+      }
+      let [lastq, lastv] = quantifiers.reverse().slice(-1)[0]
+      for (let [q, v] of quantifiers.reverse()) {
+        out = {
+          type: 'QuantifiedExpression',
+          quantifier: q,
+          variable: {
+            type: 'VariableOrConstant',
+            name: v
+          },
+          expression: out
+        }
+        if ((q === lastq) && (v === lastv)) {
           out.expression = {
             type: 'ExpressionStatement',
-            expression: {
-              type: 'BinaryExpression',
-              operator: t.operator,
-              left: t.left,
-              right: t.right.expression
-            }
+            expression: out.expression
           }
-          return out
+        }
       }
-      return t
+      return out
     }
   ).method('moveQuantifiersLeft',
     match.default,
