@@ -425,22 +425,24 @@ lib = lib
       if (!hasLeftDestinedQuantifier(t)) return t
       let rightExpr = t.right
       let leftExpr = t.left
-      let quantifiers = []
+      let leftQuantifiers = []
+      let rightQuantifiers = []
       while (match.isQuantified(leftExpr)) {
-        quantifiers.push([leftExpr.quantifier, leftExpr.variable.name])
+        leftQuantifiers.push([leftExpr.quantifier, leftExpr.variable.name])
         leftExpr = leftExpr.expression
       }
       while (match.isQuantified(rightExpr)) {
-        quantifiers.push([rightExpr.quantifier, rightExpr.variable.name])
+        rightQuantifiers.push([rightExpr.quantifier, rightExpr.variable.name])
         rightExpr = rightExpr.expression
       }
+      let quantifiers = leftQuantifiers.concat(rightQuantifiers)
       let out = {
         type: 'BinaryExpression',
         operator: t.operator,
         left: unwrap(leftExpr),
         right: unwrap(rightExpr)
       }
-      let [lastq, lastv] = quantifiers.reverse().slice(-1)[0]
+      let [lastq, lastv] = quantifiers[quantifiers.length - 1]
       for (let [q, v] of quantifiers.reverse()) {
         out = {
           type: 'QuantifiedExpression',

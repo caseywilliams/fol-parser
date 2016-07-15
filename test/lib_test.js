@@ -207,7 +207,18 @@ test('Quantifiers are not moved left when the quantified variable appears free a
 })
 
 test('Move quantifiers left with multiple quantifiers', t => {
-  t.is(moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z)'), 'E.x A.y A.z (f(x) & g(y) | h(z))')
+  t.is(
+    moveQuantifiersLeft('A.z h(z) & E.w k(w)'),
+    'A.z E.w (h(z) & k(w))'
+  )
+  t.is(
+    moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z)'),
+    'E.x A.y A.z (f(x) & g(y) | h(z))'
+  )
+  t.is(
+    moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z) & E.w k(w)'),
+    'E.x A.y A.z E.w (f(x) & g(y) | h(z) & k(w))'
+  )
 })
 
 test('Move quantifiers left with quantifiers first', t => {
