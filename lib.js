@@ -403,7 +403,7 @@ function hasLeftDestinedQuantifier (t) {
   return true
 }
 
-function unwrap (t) {
+function expressionUnwrap (t) {
   return (match.isExpression(t) ? t.expression : t)
 }
 
@@ -420,6 +420,8 @@ lib = lib
   .method('moveQuantifiersLeft',
     match.isBinary,
     (t) => {
+      let keepRightWrap = match.isExpression(t.right)
+      let keepLeftWrap = match.isExpression(t.left)
       t.right = lib.moveQuantifiersLeft(t.right)
       t.left = lib.moveQuantifiersLeft(t.left)
       if (!hasLeftDestinedQuantifier(t)) return t
@@ -439,8 +441,8 @@ lib = lib
       let out = {
         type: 'BinaryExpression',
         operator: t.operator,
-        left: unwrap(leftExpr),
-        right: unwrap(rightExpr)
+        left: (keepLeftWrap ? leftExpr : expressionUnwrap(leftExpr)),
+        right: (keepRightWrap ? rightExpr : expressionUnwrap(rightExpr))
       }
       let [lastq, lastv] = quantifiers[quantifiers.length - 1]
       for (let [q, v] of quantifiers.reverse()) {
@@ -461,6 +463,19 @@ lib = lib
         }
       }
       return out
+    }
+  ).method('moveQuantifiersLeft',
+    match.isQuantified,
+    (t) => {
+      t.expression = lib.moveQuantifiersLeft(t.expression)
+      return t
+    }
+  ).method('moveQuantifiersLeft',
+    match.isExpression,
+    (t) => {
+      t.expression = lib.moveQuantifiersLeft(t.expression)
+      if (match.isQuantified(t.expression)) t = expressionUnwrap(t)
+      return t
     }
   ).method('moveQuantifiersLeft',
     match.default,

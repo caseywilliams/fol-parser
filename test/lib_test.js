@@ -223,7 +223,18 @@ test('Move quantifiers left with multiple quantifiers', t => {
 
 test('Move quantifiers left with quantifiers first', t => {
   t.is(
-    moveQuantifiersLeft('A.x A.y (!f(x, y) | E.z (f(x, z) & f(y, z)))'),
-    'A.x A.y E.z (!f(x, y) | f(x, z) & f(y, z))'
+    moveQuantifiersLeft('A.x A.y (f(x, y) | E.z (f(x, z) & f(y, z)))'),
+    'A.x A.y E.z (f(x, y) | f(x, z) & f(y, z))'
+  )
+})
+
+test('Parens are maintained when appropriate while moving quantifiers left', t => {
+  t.is(
+    moveQuantifiersLeft('A.z (P(x) & (!Q(z) | E.y R(z, y) | A.w !P(w)))'),
+    'A.z E.y A.w (P(x) & (!Q(z) | R(z, y) | !P(w)))'
+  )
+  t.is(
+    moveQuantifiersLeft('A.z ((P(x) | R(x)) & (!Q(z) | E.y R(z, y) | A.w !P(w)))'),
+    'A.z E.y A.w ((P(x) | R(x)) & (!Q(z) | R(z, y) | !P(w)))'
   )
 })
