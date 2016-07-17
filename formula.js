@@ -10,14 +10,15 @@ class Scope {
     this.available = Scope.charDiff(names)
   }
 
-  push (item) {
-    if (this.isUsed(item) && !this.isQuantified(item) && !this.hasRename(item)) {
-      this.complexityCheck()
+  push (item, isNew = false) {
+    this.complexityCheck()
+    // TODO: this is horrid
+    if (this.isUsed(item) && !this.isQuantified(item) && (!this.hasRename(item) || isNew)) {
       let c = this.available.pop()
       this.renames[item] = c
       this.used.push(c)
     } else {
-      this.used.push(item)
+      if (!this.isUsed(item)) this.used.push(item)
     }
   }
 

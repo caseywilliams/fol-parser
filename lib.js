@@ -261,7 +261,7 @@ lib = lib
   .method('markFree',
     match.isVariable,
     (t, names, quantified = []) => {
-      t.free = !(quantified.includes(t.name))
+      t.free = !quantified.includes(t.name)
       return t
     }
   ).method('markFree',
@@ -319,7 +319,7 @@ lib = lib
   ).method('rename',
     match.isQuantified,
     (t, scope) => {
-      scope.push(t.variable.name)
+      scope.push(t.variable.name, true)
       t.variable.name = scope.check(t.variable.name)
       scope.quantified.push(t.variable.name)
       t.expression = lib.rename(t.expression, scope)
@@ -399,8 +399,7 @@ function hasLeftDestinedQuantifier (t) {
   if (!match.isBinary(t)) return false
   if (t.operator === 'Implication') return false
   if (t.right.type !== 'QuantifiedExpression') return false
-  if (lib.containsFree(t.left, t.right.variable.name)) return false
-  return true
+  return !lib.containsFree(t.left, t.right.variable.name)
 }
 
 function expressionUnwrap (t) {
