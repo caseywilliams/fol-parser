@@ -30,3 +30,8 @@ test('Rename nested quantified variables', t => {
   const f = new Formula('A.x A.y E.z f(w, x, y, z) | !E.x !E.y !A.z f(w, x, y, z)')
   t.is(f.rename().stringify(), 'A.x A.y E.z f(w, x, y, z) | !E.v !E.u !A.t f(s, v, u, t)')
 })
+
+test('Rename variables correctly when there are nested quantifiers with the same variable', t => {
+  const f = new Formula('E.x p(x) | A.x (q(x) & E.x p(x))')
+  t.is(f.rename().stringify(), 'E.x p(x) | A.z (q(z) & E.y p(y))')
+})
