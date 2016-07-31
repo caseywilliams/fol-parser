@@ -54,6 +54,13 @@ test('Negation is applied within negated expression statements', t => {
   t.is(negate('(f(x))'), '(!f(x))')
 })
 
+test('Negation does not permanently alter the formula object', t => {
+  const s = 'A.y P(f(y), z) | !!Q(x) & E.y !!!Q(y) -> (!Q & P)'
+  const obj = parse(s)
+  lib.negate(obj)
+  t.is(lib.stringify(obj), s)
+})
+
 test('Negation collapse does not affect already collapsed expressions', t => {
   t.is(collapseNegations('P'), 'P')
   t.is(collapseNegations('!P'), '!P')
@@ -89,6 +96,13 @@ test('Negation collapse collapses multiply negated quantified expressions', t =>
   t.is(collapseNegations('A.x !!f(x)'), 'A.x f(x)')
 })
 
+test('Negation collapse does not permanently alter the formula object', t => {
+  const s = '!!!A.y !!!P(!!!f(y), z) | !!!Q(x) & !!E.y !!Q(y) -> !!!(!!!Q & !!P)'
+  const obj = parse(s)
+  lib.collapseNegations(obj)
+  t.is(lib.stringify(obj), s)
+})
+
 test('Implications can be removed', t => {
   t.is(removeImplications('P -> Q'), '!P | Q')
 })
@@ -107,6 +121,13 @@ test('Implication removal works correctly when either side is a quantified expre
 
 test('Implication removal works correctly within a quantified expression', t => {
   t.is(removeImplications('A.x (f(x) -> g(y))'), 'A.x (!f(x) | g(y))')
+})
+
+test('Implication removal does not permanently alter the formula object', t => {
+  const s = 'A.x (f(x) -> g(x)) -> P(f(x), y) | (P -> Q)'
+  const obj = parse(s)
+  lib.removeImplications(obj)
+  t.is(lib.stringify(obj), s)
 })
 
 test('Collect names from functions', t => {
@@ -237,4 +258,11 @@ test('Parens are maintained when appropriate while moving quantifiers left', t =
     moveQuantifiersLeft('A.z ((P(x) | R(x)) & (!Q(z) | E.y R(z, y) | A.w !P(w)))'),
     'A.z E.y A.w ((P(x) | R(x)) & (!Q(z) | R(z, y) | !P(w)))'
   )
+})
+
+test('Moving quantifiers left does not permanently alter the formula object', t => {
+  const s = 'A.y P(f(y), z) | (E.x !!Q(x) & E.y !!!Q(y) -> A.x f(x))'
+  const obj = parse(s)
+  lib.moveQuantifiersLeft(obj)
+  t.is(lib.stringify(obj), s)
 })

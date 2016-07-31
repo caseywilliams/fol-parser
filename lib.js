@@ -1,4 +1,7 @@
 import _ from 'bilby'
+import c from 'clone'
+
+const clone = function (obj) { return c(obj, false) }
 
 const strings = {
   Conjunction: '&',
@@ -22,11 +25,17 @@ const match = {
   hasArguments: (t) => (t.type === 'Predicate') || (t.type === 'FunctionExpression')
 }
 
-const negationWrap = (t) => ({
-  type: 'UnaryExpression',
-  operator: 'Negation',
-  argument: t
-})
+function negationWrap (t) {
+  return {
+    type: 'UnaryExpression',
+    operator: 'Negation',
+    argument: clone(t)
+  }
+}
+
+function unwrapExpression (t) {
+  return (match.isExpression(t) ? t.expression : t)
+}
 
 let lib = _.environment()
   .method('stringify',
@@ -67,10 +76,10 @@ lib = lib
     (t) => t.argument
   ).method('negate',
     match.isExpression,
-    (t) => {
-      t.expression = lib.negate(t.expression)
-      return t
-    }
+    (t) => ({
+      type: 'ExpressionStatement',
+      expression: lib.negate(t.expression)
+    })
   ).method('negate',
     match.isBinary,
     (t) => {
@@ -92,7 +101,7 @@ lib = lib
         return {
           type: 'BinaryExpression',
           operator: 'Conjunction',
-          left: t.left,
+          left: clone(t.left),
           right: lib.negate(t.right)
         }
       }
@@ -100,9 +109,12 @@ lib = lib
   ).method('negate',
     match.isQuantified,
     (t) => {
-      t.quantifier = (t.quantifier === 'Universal') ? 'Existential' : 'Universal'
-      t.expression = lib.negate(t.expression)
-      return t
+      return {
+        type: t.type,
+        variable: t.variable,
+        quantifier: (t.quantifier === 'Universal') ? 'Existential' : 'Universal',
+        expression: lib.negate(t.expression)
+      }
     }
   )
 
@@ -111,7 +123,7 @@ lib = lib
     /** nested negations **/
     (t) => match.isNegation(t.argument),
     (t) => {
-      let negated = t.argument
+      let negated = clone(t.argument)
       let n = 1
       if (match.isQuantified(negated.argument)) {
         negated.argument.expression = lib.collapseNegations(negated.argument.expression)
@@ -131,77 +143,78 @@ lib = lib
   ).method('collapseNegation',
     (t) => match.isQuantified(t.argument),
     (t) => {
-      t.argument = lib.collapseNegations(lib.negate(t.argument))
-      t.argument.expression = lib.collapseNegations(t.argument.expression)
-      return t.argument
+      const out = clone(t)
+      out.argument = lib.collapseNegations(lib.negate(out.argument))
+      out.argument.expression = lib.collapseNegations(out.argument.expression)
+      return out.argument
     }
   ).method('collapseNegation',
     match.default,
-    (t) => t
+    (t) => clone(t)
   )
 
 lib = lib
   .method('collapseNegations',
     match.isBinary,
     (t) => {
-      t.left = lib.collapseNegations(t.left)
-      t.right = lib.collapseNegations(t.right)
-      return t
+      const out = clone(t)
+      out.left = lib.collapseNegations(out.left)
+      out.right = lib.collapseNegations(out.right)
+      return out
     }
   )
   .method('collapseNegations',
     match.isNegation,
     (t) => lib.collapseNegation(t)
   ).method('collapseNegations',
-    (t) => (t.type === 'QuantifiedExpression'),
+    match.isQuantified,
     (t) => {
-      t.expression = lib.collapseNegations(t.expression)
-      return t
+      const out = clone(t)
+      out.expression = lib.collapseNegations(out.expression)
+      return out
     }
   ).method('collapseNegations',
     match.isExpression,
     (t) => {
-      t.expression = lib.collapseNegations(t.expression)
-      return t
+      const out = clone(t)
+      out.expression = lib.collapseNegations(out.expression)
+      return out
     }
   ).method('collapseNegations',
     match.hasArguments,
     (t) => {
-      t.arguments = t.arguments.map(lib.collapseNegations)
-      return t
+      const out = clone(t)
+      out.arguments = out.arguments.map(lib.collapseNegations)
+      return out
     }
   ).method('collapseNegations',
     match.default,
-    (t) => t
+    (t) => clone(t)
   )
 
 lib = lib
   .method('removeImplications',
     match.isBinary,
     (t) => {
-      t.left = lib.removeImplications(t.left)
-      t.right = lib.removeImplications(t.right)
-      if (t.operator === 'Implication') {
-        t.operator = 'Disjunction'
-        t.left = lib.negate(t.left)
+      const out = clone(t)
+      out.left = lib.removeImplications(out.left)
+      out.right = lib.removeImplications(out.right)
+      if (out.operator === 'Implication') {
+        out.operator = 'Disjunction'
+        out.left = lib.negate(out.left)
       }
-      return t
+      return out
     }
   ).method('removeImplications',
-    match.isExpression,
+    match.hasExpression,
     (t) => {
-      t.expression = lib.removeImplications(t.expression)
-      return t
-    }
-  ).method('removeImplications',
-    (t) => t.type === 'QuantifiedExpression',
-    (t) => {
-      t.expression = lib.removeImplications(t.expression)
-      return t
+      const out = clone(t)
+      out.expression = lib.removeImplications(out.expression)
+      return out
     }
   ).method('removeImplications',
     match.default,
-    (t) => t
+    (t) => clone(t)
   )
 
 function addName (t, scope = {}) {
@@ -402,10 +415,6 @@ function hasLeftDestinedQuantifier (t) {
   return !lib.containsFree(t.left, t.right.variable.name)
 }
 
-function expressionUnwrap (t) {
-  return (match.isExpression(t) ? t.expression : t)
-}
-
 /**
  * Move quantifiers left using equivalencies
  * (Provided x is not free in P):
@@ -419,13 +428,14 @@ lib = lib
   .method('moveQuantifiersLeft',
     match.isBinary,
     (t) => {
-      let keepRightWrap = match.isExpression(t.right)
-      let keepLeftWrap = match.isExpression(t.left)
-      t.right = lib.moveQuantifiersLeft(t.right)
-      t.left = lib.moveQuantifiersLeft(t.left)
-      if (!hasLeftDestinedQuantifier(t)) return t
-      let rightExpr = t.right
-      let leftExpr = t.left
+      const o = clone(t)
+      let keepRightWrap = match.isExpression(o.right)
+      let keepLeftWrap = match.isExpression(o.left)
+      o.right = lib.moveQuantifiersLeft(o.right)
+      o.left = lib.moveQuantifiersLeft(o.left)
+      if (!hasLeftDestinedQuantifier(o)) return o
+      let rightExpr = o.right
+      let leftExpr = o.left
       let leftQuantifiers = []
       let rightQuantifiers = []
       while (match.isQuantified(leftExpr)) {
@@ -439,9 +449,9 @@ lib = lib
       let quantifiers = leftQuantifiers.concat(rightQuantifiers)
       let out = {
         type: 'BinaryExpression',
-        operator: t.operator,
-        left: (keepLeftWrap ? leftExpr : expressionUnwrap(leftExpr)),
-        right: (keepRightWrap ? rightExpr : expressionUnwrap(rightExpr))
+        operator: o.operator,
+        left: (keepLeftWrap ? leftExpr : unwrapExpression(leftExpr)),
+        right: (keepRightWrap ? rightExpr : unwrapExpression(rightExpr))
       }
       let [lastq, lastv] = quantifiers[quantifiers.length - 1]
       for (let [q, v] of quantifiers.reverse()) {
@@ -466,19 +476,21 @@ lib = lib
   ).method('moveQuantifiersLeft',
     match.isQuantified,
     (t) => {
-      t.expression = lib.moveQuantifiersLeft(t.expression)
-      return t
+      const out = clone(t)
+      out.expression = lib.moveQuantifiersLeft(out.expression)
+      return out
     }
   ).method('moveQuantifiersLeft',
     match.isExpression,
     (t) => {
-      t.expression = lib.moveQuantifiersLeft(t.expression)
-      if (match.isQuantified(t.expression)) t = expressionUnwrap(t)
-      return t
+      let out = clone(t)
+      out.expression = lib.moveQuantifiersLeft(out.expression)
+      if (match.isQuantified(out.expression)) out = unwrapExpression(out)
+      return out
     }
   ).method('moveQuantifiersLeft',
     match.default,
-    (t) => t
+    (t) => clone(t)
   )
 
 export default lib

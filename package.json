@@ -36,6 +36,7 @@
     "babel": "inherit"
   },
   "dependencies": {
-    "bilby": "0.0.2"
+    "bilby": "0.0.2",
+    "clone": "^1.0.2"
   }
 }

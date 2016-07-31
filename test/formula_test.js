@@ -11,11 +11,6 @@ test('Formula can be negated', t => {
   t.is(f.negate().stringify(), 'E.y !P(f(y), z) & !Q(x)')
 })
 
-test('Negated version can be retrieved without affecting the source', t => {
-  const f = new Formula('A.y P(f(y), z) | !!Q(x)')
-  t.is(f.negate().stringify(), 'E.y !P(f(y), z) & !Q(x)')
-})
-
 test('Formula can collapse its negations', t => {
   const f = new Formula('A.y P(f(y), z) | !!Q(x)')
   t.is(f.collapseNegations().stringify(), 'A.y P(f(y), z) | Q(x)')
