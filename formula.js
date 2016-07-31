@@ -45,23 +45,18 @@ Scope.charDiff = (names = []) =>
   Scope.allChars.filter((i) => names.indexOf(i) < 0)
 
 var Formula = function (input = '') {
-  this.input = input
-  this.initialize()
-}
-
-Formula.prototype.initialize = function () {
-  if (typeof this.input === 'string') {
-    this.source = parse(this.input)
+  if (typeof input === 'string') {
+    this.source = parse(input)
   } else if (
-    this.input !== null &&
-    typeof this.input === 'object' &&
-    !!this.input.type
+    input !== null &&
+    typeof input === 'object' &&
+    !!input.type
   ) {
-    this.source = Object.create(this.input)
+    this.source = Object.create(input)
   } else {
     throw new Error(
       'Tried to create a formula from unusable input: ' +
-      JSON.stringify(this.input)
+      JSON.stringify(input)
     )
   }
 }
