@@ -1,5 +1,5 @@
-import test from 'ava'
-import tokenize from '../tokenize'
+const test = require('ava')
+const tokenize = require('../tokenize')
 
 const operatorOutput = (id, start = 0, end = 1) => {
   return { id, type: 'operator', start, end }
@@ -28,12 +28,12 @@ test('Predicate', t => {
 })
 
 test('Boolean values', t => {
-  t.deepEqual(tokenize('⊤'), [ booleanOutput() ])
-  t.deepEqual(tokenize('1'), [ booleanOutput() ])
-  t.deepEqual(tokenize('True'), [ booleanOutput(1, 0, 4) ])
-  t.deepEqual(tokenize('⊥'), [ booleanOutput(0) ])
-  t.deepEqual(tokenize('0'), [ booleanOutput(0) ])
-  t.deepEqual(tokenize('False'), [ booleanOutput(0, 0, 5) ])
+  t.deepEqual(tokenize('⊤'), [booleanOutput()])
+  t.deepEqual(tokenize('1'), [booleanOutput()])
+  t.deepEqual(tokenize('True'), [booleanOutput(1, 0, 4)])
+  t.deepEqual(tokenize('⊥'), [booleanOutput(0)])
+  t.deepEqual(tokenize('0'), [booleanOutput(0)])
+  t.deepEqual(tokenize('False'), [booleanOutput(0, 0, 5)])
 })
 
 test('Multi-character predicate name', t => {
@@ -47,12 +47,12 @@ test('Multi-character predicate name', t => {
 })
 
 test('Binary operations', t => {
-  t.deepEqual(tokenize('∨'), [ operatorOutput('Disjunction') ])
-  t.deepEqual(tokenize('|'), [ operatorOutput('Disjunction') ])
-  t.deepEqual(tokenize('∧'), [ operatorOutput('Conjunction') ])
-  t.deepEqual(tokenize('&'), [ operatorOutput('Conjunction') ])
-  t.deepEqual(tokenize('→'), [ operatorOutput('Implication') ])
-  t.deepEqual(tokenize('->'), [ operatorOutput('Implication', 0, 2) ])
+  t.deepEqual(tokenize('∨'), [operatorOutput('Disjunction')])
+  t.deepEqual(tokenize('|'), [operatorOutput('Disjunction')])
+  t.deepEqual(tokenize('∧'), [operatorOutput('Conjunction')])
+  t.deepEqual(tokenize('&'), [operatorOutput('Conjunction')])
+  t.deepEqual(tokenize('→'), [operatorOutput('Implication')])
+  t.deepEqual(tokenize('->'), [operatorOutput('Implication', 0, 2)])
 })
 
 test('Variable or constant', t => {
@@ -84,24 +84,24 @@ test('Function symbol', t => {
 })
 
 test('Negation', t => {
-  t.deepEqual(tokenize('!'), [ operatorOutput('Negation') ])
-  t.deepEqual(tokenize('¬'), [ operatorOutput('Negation') ])
-  t.deepEqual(tokenize('~'), [ operatorOutput('Negation') ])
+  t.deepEqual(tokenize('!'), [operatorOutput('Negation')])
+  t.deepEqual(tokenize('¬'), [operatorOutput('Negation')])
+  t.deepEqual(tokenize('~'), [operatorOutput('Negation')])
 })
 
 test('Parentheses', t => {
-  t.deepEqual(tokenize('('), [ operatorOutput('LeftParen') ])
-  t.deepEqual(tokenize(')'), [ operatorOutput('RightParen') ])
+  t.deepEqual(tokenize('('), [operatorOutput('LeftParen')])
+  t.deepEqual(tokenize(')'), [operatorOutput('RightParen')])
 })
 
 test('Quantifiers', t => {
-  t.deepEqual(tokenize('∃'), [ operatorOutput('Existential') ])
-  t.deepEqual(tokenize('E.'), [ operatorOutput('Existential', 0, 2) ])
-  t.deepEqual(tokenize('∀'), [ operatorOutput('Universal') ])
-  t.deepEqual(tokenize('A.'), [ operatorOutput('Universal', 0, 2) ])
+  t.deepEqual(tokenize('∃'), [operatorOutput('Existential')])
+  t.deepEqual(tokenize('E.'), [operatorOutput('Existential', 0, 2)])
+  t.deepEqual(tokenize('∀'), [operatorOutput('Universal')])
+  t.deepEqual(tokenize('A.'), [operatorOutput('Universal', 0, 2)])
 })
 
 test('Unrecognized symbols', t => {
-  t.throws(() => tokenize('-'), 'Unrecognized symbol: \'-\' (at 1)')
-  t.throws(() => tokenize('*'), 'Unrecognized symbol: \'*\' (at 1)')
+  t.throws(() => tokenize('-'), { message: 'Unrecognized symbol: \'-\' (at 1)' })
+  t.throws(() => tokenize('*'), { message: 'Unrecognized symbol: \'*\' (at 1)' })
 })

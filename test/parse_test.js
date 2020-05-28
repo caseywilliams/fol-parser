@@ -1,5 +1,5 @@
-import test from 'ava'
-import parse from '../parse'
+const test = require('ava')
+const parse = require('../parse')
 
 test('Empty input', t => {
   t.deepEqual(parse(''), {})
@@ -211,12 +211,12 @@ test('Parentheses override default operator precedence', t => {
 })
 
 test('Error: function symbol with no arguments', t => {
-  t.throws(() => parse('f()'), 'Functions should have at least one argument')
+  t.throws(() => parse('f()'), { message: 'Functions should have at least one argument' })
 })
 
 test('Error: inappropriate argument types', t => {
-  t.throws(() => parse('f(x, P)'), 'Function arguments should be variables, constants, or other functions (got Predicate)')
-  t.throws(() => parse('P(x, Q)'), 'Predicate arguments should be variables, constants, or functions (got Predicate)')
+  t.throws(() => parse('f(x, P)'), { message: 'Function arguments should be variables, constants, or other functions (got Predicate)' })
+  t.throws(() => parse('P(x, Q)'), { message: 'Predicate arguments should be variables, constants, or functions (got Predicate)' })
 })
 
 test('Function symbol with single argument', t => {
@@ -282,7 +282,7 @@ test('Function symbol with function arguments', t => {
 })
 
 test('Quantifier without a variable', t => {
-  t.throws(() => parse('E. f(x)'), 'Expected a variable for quantification (got FunctionExpression)')
+  t.throws(() => parse('E. f(x)'), { message: 'Expected a variable for quantification (got FunctionExpression)' })
 })
 
 test('Quantified function', t => {

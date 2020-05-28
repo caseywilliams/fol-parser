@@ -1,9 +1,18 @@
+const tokenize = require('./tokenize')
+
 /*
  Based on Douglas Crockford's paper on top-down operator precedence:
  http://javascript.crockford.com/tdop/tdop.html
  */
 
-import tokenize from './tokenize'
+const validArgument = (e) => {
+  if (['VariableOrConstant', 'FunctionExpression'].indexOf(e.type) >= 0) {
+    return true
+  } else if (e.type === 'UnaryExpression' && validArgument(e.argument)) {
+    return true
+  }
+  return false
+}
 
 function Parser () {
   const symbolTable = {}
@@ -20,7 +29,7 @@ function Parser () {
     }
   }
 
-  function createSymbol (id, bp = 0) {
+  const createSymbol = (id, bp = 0) => {
     let s = symbolTable[id]
     if (s) {
       if (bp >= s.lbp) {
@@ -36,27 +45,21 @@ function Parser () {
   }
 
   createSymbol('End')
-
   createSymbol('RightParen')
-
   createSymbol('Comma')
-
   createSymbol('VariableOrConstant').nud = function nud () {
     return this
   }
-
   createSymbol('True').nud = function nud () {
     this.type = 'Literal'
     this.value = true
     return this
   }
-
   createSymbol('False').nud = function nud () {
     this.type = 'Literal'
     this.value = true
     return this
   }
-
   createSymbol('Predicate').nud = function nud () {
     const a = []
     if (token.id === 'LeftParen') {
@@ -79,7 +82,7 @@ function Parser () {
     return this
   }
 
-  function createInfix (id, bp, led) {
+  const createInfix = (id, bp, led) => {
     const s = createSymbol(id, bp)
     s.led = led || function led (left) {
       this.type = 'BinaryExpression'
@@ -94,12 +97,10 @@ function Parser () {
   }
 
   createInfix('Disjunction', 50)
-
   createInfix('Conjunction', 50)
-
   createInfix('Implication', 40)
 
-  function createPrefix (id, nud) {
+  const createPrefix = (id, nud) => {
     const s = createSymbol(id)
     s.nud = nud || function nud () {
       this.type = 'UnaryExpression'
@@ -112,7 +113,6 @@ function Parser () {
   }
 
   createPrefix('Negation')
-
   createPrefix('LeftParen', function nud () {
     this.type = 'ExpressionStatement'
     const e = expression()
@@ -121,16 +121,6 @@ function Parser () {
     this.expression = e
     return this
   })
-
-  const validArgument = (e) => {
-    if (['VariableOrConstant', 'FunctionExpression'].indexOf(e.type) >= 0) {
-      return true
-    } else if (e.type === 'UnaryExpression' && validArgument(e.argument)) {
-      return true
-    }
-    return false
-  }
-
   createPrefix('FunctionExpression', function nud () {
     advance('LeftParen')
     const a = []
@@ -172,7 +162,6 @@ function Parser () {
   }
 
   createQuantifier('Existential')
-
   createQuantifier('Universal')
 
   const advance = function advance (id) {
@@ -228,4 +217,4 @@ function Parser () {
   }
 }
 
-export default new Parser()
+module.exports = new Parser()

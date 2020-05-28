@@ -1,6 +1,6 @@
-import lib from '../lib'
-import parse from '../parse'
-import test from 'ava'
+const test = require('ava')
+const lib = require('../lib')
+const parse = require('../parse')
 
 const negate = (s) => lib.stringify(lib.negate(parse(s)))
 const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
@@ -179,11 +179,11 @@ test('Collect names from negated expressions', t => {
 })
 
 test('Throw an error if a function with the same name as a variable is encountered', t => {
-  t.throws(() => collectNames('f(x) | g(f)'), 'Found conflict between variable and function name (f).')
+  t.throws(() => collectNames('f(x) | g(f)'), { message: 'Found conflict between variable and function name (f).' })
 })
 
 test('Mark free variables in quantified expressions', t => {
-  let marked = markFree('A.x f(x, y, g(y))')
+  const marked = markFree('A.x f(x, y, g(y))')
   t.is(marked.variable.free, false)
   t.is(marked.expression.arguments[0].free, false)
   t.is(marked.expression.arguments[1].free, true)
@@ -191,8 +191,8 @@ test('Mark free variables in quantified expressions', t => {
 })
 
 test('Mark free variables in nested quantified expressions', t => {
-  let marked = markFree('A.x E.y (f(x) | !P(x, y, z))')
-  let expr = marked.expression.expression.expression // f(x) | !P(x, y, z)
+  const marked = markFree('A.x E.y (f(x) | !P(x, y, z))')
+  const expr = marked.expression.expression.expression // f(x) | !P(x, y, z)
   t.is(expr.left.arguments[0].free, false)
   t.is(expr.right.argument.arguments[0].free, false)
   t.is(expr.right.argument.arguments[1].free, false)

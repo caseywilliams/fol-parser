@@ -1,5 +1,5 @@
-import _ from 'bilby'
-import c from 'clone'
+const _ = require('bilby')
+const c = require('clone')
 
 const clone = function (obj) { return c(obj, false) }
 
@@ -240,7 +240,7 @@ lib = lib
       if (match.isFunction(t)) {
         names = addName(t, names)
       }
-      for (let arg of t.arguments) {
+      for (const arg of t.arguments) {
         names = Object.assign(names, lib.collectNames(arg, names))
       }
       return names
@@ -373,7 +373,7 @@ lib = lib
   ).method('containsFree',
     match.hasArguments,
     (t, varName, quantified = []) => {
-      for (let arg of t.arguments) {
+      for (const arg of t.arguments) {
         if (lib.containsFree(arg, varName, quantified)) return true
       }
       return false
@@ -429,15 +429,15 @@ lib = lib
     match.isBinary,
     (t) => {
       const o = clone(t)
-      let keepRightWrap = match.isExpression(o.right)
-      let keepLeftWrap = match.isExpression(o.left)
+      const keepRightWrap = match.isExpression(o.right)
+      const keepLeftWrap = match.isExpression(o.left)
       o.right = lib.moveQuantifiersLeft(o.right)
       o.left = lib.moveQuantifiersLeft(o.left)
       if (!hasLeftDestinedQuantifier(o)) return o
       let rightExpr = o.right
       let leftExpr = o.left
-      let leftQuantifiers = []
-      let rightQuantifiers = []
+      const leftQuantifiers = []
+      const rightQuantifiers = []
       while (match.isQuantified(leftExpr)) {
         leftQuantifiers.push([leftExpr.quantifier, leftExpr.variable.name])
         leftExpr = leftExpr.expression
@@ -446,15 +446,15 @@ lib = lib
         rightQuantifiers.push([rightExpr.quantifier, rightExpr.variable.name])
         rightExpr = rightExpr.expression
       }
-      let quantifiers = leftQuantifiers.concat(rightQuantifiers)
+      const quantifiers = leftQuantifiers.concat(rightQuantifiers)
       let out = {
         type: 'BinaryExpression',
         operator: o.operator,
         left: (keepLeftWrap ? leftExpr : unwrapExpression(leftExpr)),
         right: (keepRightWrap ? rightExpr : unwrapExpression(rightExpr))
       }
-      let [lastq, lastv] = quantifiers[quantifiers.length - 1]
-      for (let [q, v] of quantifiers.reverse()) {
+      const [lastq, lastv] = quantifiers[quantifiers.length - 1]
+      for (const [q, v] of quantifiers.reverse()) {
         out = {
           type: 'QuantifiedExpression',
           quantifier: q,
@@ -493,4 +493,4 @@ lib = lib
     (t) => clone(t)
   )
 
-export default lib
+module.exports = lib

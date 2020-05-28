@@ -3,52 +3,48 @@
  http://eli.thegreenplace.net/2013/07/16/hand-written-lexer-in-javascript-compared-to-the-regex-based-ones
  */
 
-function isAlpha (c) {
-  return /[A-Za-z]/.test(c)
-}
-
-function isNumeric (c) {
-  return /[0-9]/.test(c)
-}
-
-const symbols = {
+const symbols = Object.freeze({
+  0: 'False',
+  1: 'True',
+  ',': 'Comma',
   '&': 'Conjunction',
   '∧': 'Conjunction',
   '|': 'Disjunction',
   '∨': 'Disjunction',
+  '∃': 'Existential',
+  '⊥': 'False',
   '→': 'Implication',
   '(': 'LeftParen',
-  ')': 'RightParen',
-  ',': 'Comma',
-  '∃': 'Existential',
-  '∀': 'Universal',
-  '!': 'Negation',
-  '¬': 'Negation',
   '~': 'Negation',
-  '1': 'True',
+  '¬': 'Negation',
+  '!': 'Negation',
+  ')': 'RightParen',
   '⊤': 'True',
-  '0': 'False',
-  '⊥': 'False'
-}
+  '∀': 'Universal'
+})
+
+const isAlpha = (char) => /[A-Za-z]/.test(char)
+const isNumeric = (char) => /[0-9]/.test(char)
+const isWhitespace = (char) => /\s/.test(char)
 
 function Lexer () {
   let cursor = 0
-  let source = ''
   let length = 0
+  let source = ''
 
   const done = () => length === cursor
 
-  function skipWhitespace () {
+  const skipWhitespace = () => {
     let char
     while (!done()) {
       char = source.charAt(cursor)
-      if (/\s/.test(char)) {
+      if (isWhitespace(char)) {
         ++cursor
       } else break
     }
   }
 
-  function processAlpha () {
+  const processAlpha = () => {
     // Special case: quantifiers written as 'A.' and 'E.':
     const char = source.charAt(cursor)
     if (char === 'A' || char === 'E') {
@@ -66,8 +62,9 @@ function Lexer () {
 
     let end = cursor + 1
     while (end < length && isAlpha(source.charAt(end))) ++end
+
     const value = source.substring(cursor, end)
-    let token = {
+    const token = {
       start: cursor,
       end
     }
@@ -96,7 +93,7 @@ function Lexer () {
     return token
   }
 
-  function processBoolean () {
+  const processBoolean = () => {
     const char = source.charAt(cursor)
     let id = 'True'
     if (char === '⊥') id = 'False'
@@ -111,7 +108,7 @@ function Lexer () {
     return token
   }
 
-  function next () {
+  const next = () => {
     skipWhitespace()
     if (done()) return null
     const char = source.charAt(cursor)
@@ -152,7 +149,7 @@ function Lexer () {
     }
   }
 
-  return function tokenize (input) {
+  const tokenize = (input) => {
     if (typeof input === 'undefined') return []
     source = String(input)
     length = source.length
@@ -163,6 +160,8 @@ function Lexer () {
     cursor = 0
     return tokens
   }
+
+  return tokenize
 }
 
-export default new Lexer()
+module.exports = new Lexer()
