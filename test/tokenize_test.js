@@ -1,10 +1,10 @@
 const test = require('ava')
 const tokenize = require('../tokenize')
 
-const operatorOutput = (id, start = 0, end = 1) => {
+const operatorToken = (id, start = 0, end = 1) => {
   return { id, type: 'operator', start, end }
 }
-const booleanOutput = (truthy = 1, start = 0, end = 1) => {
+const booleanToken = (truthy = 1, start = 0, end = 1) => {
   return {
     id: (truthy ? 'True' : 'False'),
     type: 'boolean',
@@ -13,92 +13,89 @@ const booleanOutput = (truthy = 1, start = 0, end = 1) => {
   }
 }
 
+const nameToken = (id, value, start = 0, end = 1) => {
+  return { id, type: 'name', start, end, value }
+}
+
 test('Empty statement', t => {
   t.deepEqual(tokenize(), [])
 })
 
-test('Predicate', t => {
-  t.deepEqual(tokenize('P'), [{
-    id: 'Predicate',
-    type: 'name',
-    value: 'P',
-    start: 0,
-    end: 1
-  }])
+test('Predicates', t => {
+  t.deepEqual(tokenize('Q'), [nameToken('Predicate', 'Q')])
+  t.deepEqual(tokenize('T'), [nameToken('Predicate', 'T')])
+  t.deepEqual(tokenize('E'), [nameToken('Predicate', 'E')])
+  t.deepEqual(tokenize('A'), [nameToken('Predicate', 'A')])
 })
 
-test('Boolean values', t => {
-  t.deepEqual(tokenize('⊤'), [booleanOutput()])
-  t.deepEqual(tokenize('1'), [booleanOutput()])
-  t.deepEqual(tokenize('True'), [booleanOutput(1, 0, 4)])
-  t.deepEqual(tokenize('⊥'), [booleanOutput(0)])
-  t.deepEqual(tokenize('0'), [booleanOutput(0)])
-  t.deepEqual(tokenize('False'), [booleanOutput(0, 0, 5)])
+test('Predicates with multi-character names', t => {
+  t.deepEqual(tokenize('Predicate'), [nameToken('Predicate', 'Predicate', 0, 9)])
 })
 
-test('Multi-character predicate name', t => {
-  t.deepEqual(tokenize('Predicate'), [{
-    id: 'Predicate',
-    type: 'name',
-    value: 'Predicate',
-    start: 0,
-    end: 9
-  }])
+test('Boolean words', t => {
+  t.deepEqual(tokenize('true'), [booleanToken(1, 0, 4)])
+  t.deepEqual(tokenize('True'), [booleanToken(1, 0, 4)])
+  t.deepEqual(tokenize('false'), [booleanToken(0, 0, 5)])
+  t.deepEqual(tokenize('False'), [booleanToken(0, 0, 5)])
+})
+
+test('Numeric booleans', t => {
+  t.deepEqual(tokenize('1'), [booleanToken()])
+  t.deepEqual(tokenize('0'), [booleanToken(0)])
+})
+
+test('Boolean symbols', t => {
+  t.deepEqual(tokenize('⊤'), [booleanToken()])
+  t.deepEqual(tokenize('⊥'), [booleanToken(0)])
 })
 
 test('Binary operations', t => {
-  t.deepEqual(tokenize('∨'), [operatorOutput('Disjunction')])
-  t.deepEqual(tokenize('|'), [operatorOutput('Disjunction')])
-  t.deepEqual(tokenize('∧'), [operatorOutput('Conjunction')])
-  t.deepEqual(tokenize('&'), [operatorOutput('Conjunction')])
-  t.deepEqual(tokenize('→'), [operatorOutput('Implication')])
-  t.deepEqual(tokenize('->'), [operatorOutput('Implication', 0, 2)])
+  t.deepEqual(tokenize('∨'), [operatorToken('Disjunction')])
+  t.deepEqual(tokenize('|'), [operatorToken('Disjunction')])
+  t.deepEqual(tokenize('∧'), [operatorToken('Conjunction')])
+  t.deepEqual(tokenize('&'), [operatorToken('Conjunction')])
+  t.deepEqual(tokenize('→'), [operatorToken('Implication')])
+  t.deepEqual(tokenize('->'), [operatorToken('Implication', 0, 2)])
 })
 
 test('Variable or constant', t => {
-  t.deepEqual(tokenize('x'), [{
-    id: 'VariableOrConstant',
-    type: 'name',
-    value: 'x',
-    start: 0,
-    end: 1
-  }])
+  t.deepEqual(tokenize('x'), [nameToken('VariableOrConstant', 'x')])
 })
 
-test('Function symbol', t => {
+test('Function notation', t => {
   t.deepEqual(tokenize('f(x)'), [
-    {
-      id: 'FunctionExpression',
-      type: 'name',
-      value: 'f',
-      start: 0,
-      end: 1
-    }, operatorOutput('LeftParen', 1, 2), {
-      id: 'VariableOrConstant',
-      type: 'name',
-      value: 'x',
-      start: 2,
-      end: 3
-    }, operatorOutput('RightParen', 3, 4)
+    nameToken('FunctionExpression', 'f', 0, 1),
+    operatorToken('LeftParen', 1, 2),
+    nameToken('VariableOrConstant', 'x', 2, 3),
+    operatorToken('RightParen', 3, 4)
   ])
 })
 
 test('Negation', t => {
-  t.deepEqual(tokenize('!'), [operatorOutput('Negation')])
-  t.deepEqual(tokenize('¬'), [operatorOutput('Negation')])
-  t.deepEqual(tokenize('~'), [operatorOutput('Negation')])
+  t.deepEqual(tokenize('!'), [operatorToken('Negation')])
+  t.deepEqual(tokenize('¬'), [operatorToken('Negation')])
+  t.deepEqual(tokenize('~'), [operatorToken('Negation')])
 })
 
 test('Parentheses', t => {
-  t.deepEqual(tokenize('('), [operatorOutput('LeftParen')])
-  t.deepEqual(tokenize(')'), [operatorOutput('RightParen')])
+  t.deepEqual(tokenize('('), [operatorToken('LeftParen')])
+  t.deepEqual(tokenize(')'), [operatorToken('RightParen')])
 })
 
-test('Quantifiers', t => {
-  t.deepEqual(tokenize('∃'), [operatorOutput('Existential')])
-  t.deepEqual(tokenize('E.'), [operatorOutput('Existential', 0, 2)])
-  t.deepEqual(tokenize('∀'), [operatorOutput('Universal')])
-  t.deepEqual(tokenize('A.'), [operatorOutput('Universal', 0, 2)])
+test('Universal quantifier', t => {
+  t.deepEqual(tokenize('∀'), [operatorToken('Universal')])
+})
+
+test('Universal quantifier ASCII', t => {
+  t.deepEqual(tokenize('A.'), [operatorToken('Universal', 0, 2)])
+})
+
+test('Existential quantifier', t => {
+  t.deepEqual(tokenize('∃'), [operatorToken('Existential')])
+})
+
+test('Existential quantifier ASCII', t => {
+  t.deepEqual(tokenize('E.'), [operatorToken('Existential', 0, 2)])
 })
 
 test('Unrecognized symbols', t => {

@@ -27,6 +27,17 @@ const isAlpha = (char) => /[A-Za-z]/.test(char)
 const isNumeric = (char) => /[0-9]/.test(char)
 const isWhitespace = (char) => /\s/.test(char)
 
+const createToken = (symbolOrId, type, cursor, end = cursor + 1, value = null) => {
+  const obj = {
+    id: symbols[symbolOrId] || symbolOrId,
+    start: cursor,
+    type,
+    end
+  }
+  if (value) obj.value = value
+  return Object.freeze(obj)
+}
+
 function Lexer () {
   let cursor = 0
   let length = 0
@@ -44,68 +55,42 @@ function Lexer () {
     }
   }
 
+  // Process one or more alpha characters
   const processAlpha = () => {
-    // Special case: quantifiers written as 'A.' and 'E.':
     const char = source.charAt(cursor)
-    if (char === 'A' || char === 'E') {
-      if (source.charAt(cursor + 1) === '.') {
-        const token = {
-          id: (char === 'A' ? 'Universal' : 'Existential'),
-          type: 'operator',
-          start: cursor,
-          end: cursor + 2
-        }
+
+    // Special case: quantifiers may be written as ASCII 'A.' and 'E.':
+    if (source.charAt(cursor + 1) === '.') {
+      if (char === 'A') {
         cursor += 2
-        return token
+        return createToken('Universal', 'operator', cursor - 2, cursor)
+      } else if (char === 'E') {
+        cursor += 2
+        return createToken('Existential', 'operator', cursor - 2, cursor)
       }
     }
 
-    let end = cursor + 1
-    while (end < length && isAlpha(source.charAt(end))) ++end
+    // Determine the end of a string of alpha chars, if one can be found:
+    const start = cursor
+    const matches = source.substring(cursor).match(/^([A-Za-z]+)/)
+    cursor += matches[1].length
+    const stringValue = source.substring(start, cursor)
 
-    const value = source.substring(cursor, end)
-    const token = {
-      start: cursor,
-      end
-    }
-
-    if (value.toLowerCase() === 'true') {
-      token.id = 'True'
-      token.type = 'boolean'
-    } else if (value.toLowerCase() === 'false') {
-      token.id = 'False'
-      token.type = 'boolean'
-    } else if (value[0] === value[0].toUpperCase()) {
-      token.id = 'Predicate'
-      token.type = 'name'
-      token.value = value
-    } else if (source.charAt(end) === '(') {
-      token.id = 'FunctionExpression'
-      token.type = 'name'
-      token.value = value
+    if (stringValue.toLowerCase() === 'true') {
+      return createToken('True', 'boolean', start, cursor)
+    } else if (stringValue.toLowerCase() === 'false') {
+      return createToken('False', 'boolean', start, cursor)
+    } else if (stringValue[0] === stringValue[0].toUpperCase()) {
+      return createToken('Predicate', 'name', start, cursor, stringValue)
+    } else if (source.charAt(cursor) === '(') {
+      return createToken('FunctionExpression', 'name', start, cursor, stringValue)
     } else {
-      token.id = 'VariableOrConstant'
-      token.type = 'name'
-      token.value = value
+      return createToken('VariableOrConstant', 'name', start, cursor, stringValue)
     }
-
-    cursor = end
-    return token
   }
 
   const processBoolean = () => {
-    const char = source.charAt(cursor)
-    let id = 'True'
-    if (char === '⊥') id = 'False'
-    if (isNumeric(char) && (char < 1)) id = 'False'
-    const token = {
-      id,
-      type: 'boolean',
-      start: cursor,
-      end: cursor + 1
-    }
-    ++cursor
-    return token
+    return createToken(source.charAt(cursor), 'boolean', cursor++)
   }
 
   const next = () => {
@@ -124,32 +109,20 @@ function Lexer () {
 
     // Special case: impl written as '->':
     if (char === '-' && nextChar === '>') {
-      const token = {
-        id: 'Implication',
-        type: 'operator',
-        start: cursor,
-        end: cursor + 2
-      }
       cursor += 2
-      return token
+      return createToken('Implication', 'operator', cursor - 2, cursor)
     }
 
-    const symbolId = symbols[char]
-    if (typeof symbolId !== 'undefined') {
-      const token = {
-        id: symbolId,
-        type: 'operator',
-        start: cursor,
-        end: cursor + 1
-      }
-      ++cursor
-      return token
-    } else {
+    // The rest of the possibilities at this point are all single-character operators:
+    if (typeof symbols[char] === 'undefined') {
       throw new Error(`Unrecognized symbol: '${char}' (at ${cursor + 1})`)
     }
+
+    return createToken(symbols[char], 'operator', cursor++)
   }
 
-  const tokenize = (input) => {
+  // Tokenizes an input string
+  return (input) => {
     if (typeof input === 'undefined') return []
     source = String(input)
     length = source.length
@@ -160,8 +133,6 @@ function Lexer () {
     cursor = 0
     return tokens
   }
-
-  return tokenize
 }
 
 module.exports = new Lexer()
