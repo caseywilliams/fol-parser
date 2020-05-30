@@ -7,14 +7,15 @@
   },
   "main": "parser.js",
   "scripts": {
-    "test": "ava",
+    "test": "jest",
+    "test:ci": "jest --ci",
     "lint": "standard"
   },
   "repository": "https://github.com/caseywilliams/fol-parser",
   "author": "Casey Williams",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^3.8.2",
+    "jest": "^26.0.1",
     "standard": "^14.3.4"
   },
   "dependencies": {
