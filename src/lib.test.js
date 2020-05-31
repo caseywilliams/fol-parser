@@ -11,37 +11,42 @@ const moveQuantifiersLeft = (s) => lib.stringify(lib.moveQuantifiersLeft(parse(s
 
 describe('lib', () => {
   describe('stringify', () => {
-    test('long expression', () => {
+    describe.each([
+      ['VariableOrConstant', 'x'],
+      ['Predicate', 'P'],
+      ['Predicate with argument', 'P(x)'],
+      ['Predicate with arguments', 'P(x, y)'],
+      ['FunctionExpression with argument', 'f(x)'],
+      ['FunctionExpression with arguments', 'f(x, y)'],
+      ['Conjunction', 'P & Q'],
+      ['Disjunction', 'P | Q'],
+      ['Implication', 'P -> Q'],
+      ['ExpressionStatement', '(P)'],
+      ['UnaryExpression', '!P'],
+      ['QuantifiedExpression', 'A.x f(x)']
+    ])('stringify %s', (name, str) => {
+      expect(lib.stringify(parse(str))).toEqual(str)
+    })
+
+    test('longer expression', () => {
       const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
       expect(lib.stringify(parse(s))).toEqual(s)
     })
   })
 
   describe('negate', () => {
-    test('variable or constant', () => {
-      expect(negate('x')).toEqual('!x')
-    })
-
-    test('function', () => {
-      expect(negate('f(x)')).toEqual('!f(x)')
-    })
-
-    test('predicate', () => {
-      expect(negate('P')).toEqual('!P')
-      expect(negate('!P')).toEqual('P')
-      expect(negate('P(x)')).toEqual('!P(x)')
-      expect(negate('!P(x)')).toEqual('P(x)')
-    })
-
-    test('binary expression', () => {
-      expect(negate('P | Q')).toEqual('!P & !Q')
-      expect(negate('P & Q')).toEqual('!P | !Q')
-      expect(negate('P -> Q')).toEqual('P & !Q')
-    })
-
-    test('quantifier', () => {
-      expect(negate('A.x f(x)')).toEqual('E.x !f(x)')
-      expect(negate('E.x f(x)')).toEqual('A.x !f(x)')
+    describe.each([
+      ['VariableOrConstant', 'x', '!x'],
+      ['Predicate', 'P', '!P'],
+      ['Predicate with arguments', 'P(x, y)', '!P(x, y)'],
+      ['FunctionExpression', 'f(x, y)', '!f(x, y)'],
+      ['Conjunction', 'P & Q', '!P | !Q'],
+      ['Disjunction', 'P | Q', '!P & !Q'],
+      ['Implication', 'P -> Q', 'P & !Q'],
+      ['Quantifier existential', 'A.x f(x)', 'E.x !f(x)'],
+      ['Quantifier universal', 'E.x f(x)', 'A.x !f(x)']
+    ])('negate %s', (name, input, output) => {
+      expect(negate(input)).toEqual(output)
     })
 
     test('Negation opration negates only the top "level" of an expression', () => {
@@ -81,6 +86,7 @@ describe('lib', () => {
     })
 
     test('Negation collapse collapses both a function/predicate and its arguments', () => {
+      const result = collapseNegations('!!P(!!!f(x), !!g(x))')
       expect(collapseNegations('!!P(!!!f(x), !!g(x))')).toEqual('P(!f(x), g(x))')
     })
 
@@ -182,14 +188,14 @@ describe('lib', () => {
     test('Collect names from negated expressions', () => {
       expect(collectNames('!f(x)')).toEqual({
         f: 'FunctionExpression',
-        x: 'VariableOrConstant',
+        x: 'VariableOrConstant'
       })
     })
 
     test('Throw an error if a function with the same name as a variable is encountered', () => {
       expect(() => {
         collectNames('f(x) | g(f)')
-      }).toThrow(/Found conflict between variable and function name \(f\)/)
+      }).toThrow(/'f'/)
     })
   })
 
