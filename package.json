@@ -9,14 +9,15 @@
   "scripts": {
     "test": "jest",
     "test:ci": "jest --ci",
-    "lint": "standard"
+    "lint": "eslint ./src"
   },
   "repository": "https://github.com/caseywilliams/fol-parser",
   "author": "Casey Williams",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^26.0.1",
-    "standard": "^14.3.4"
+    "eslint": "^7.1.0",
+    "eslint-plugin-jest": "^23.13.2",
+    "jest": "^26.0.1"
   },
   "dependencies": {},
   "private": false
