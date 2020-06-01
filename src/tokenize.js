@@ -20,7 +20,7 @@ const symbols = Object.freeze({
   '!': 'Negation',
   ')': 'RightParen',
   '⊤': 'True',
-  '∀': 'Universal'
+  '∀': 'Universal',
 })
 
 const isAlpha = (char) => /[A-Za-z]/.test(char)
@@ -32,7 +32,7 @@ const createToken = (symbolOrId, type, cursor, end = cursor + 1, value = null) =
     id: symbols[symbolOrId] || symbolOrId,
     start: cursor,
     type,
-    end
+    end,
   }
   if (value) obj.value = value
   return Object.freeze(obj)

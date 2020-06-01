@@ -6,7 +6,7 @@ const strings = {
   Implication: '->',
   Negation: '!',
   Universal: 'A.',
-  Existential: 'E.'
+  Existential: 'E.',
 }
 
 const makeMultimethod = (implementations, defaultImplementation = null) => {
@@ -16,7 +16,7 @@ const makeMultimethod = (implementations, defaultImplementation = null) => {
     apply (target, thisArg, args) {
       return (implementations[args[0].type] || defaultImplementation || target)
         .apply(thisArg, args)
-    }
+    },
   })
 }
 
@@ -41,7 +41,7 @@ const stringify = makeMultimethod({
   QuantifiedExpression: t =>
     `${strings[t.quantifier]}${stringify(t.variable)} ${stringify(t.expression)}`,
   UnaryExpression: t => `${strings[t.operator]}${stringify(t.argument)}`,
-  VariableOrConstant: t => t.name
+  VariableOrConstant: t => t.name,
 })
 
 const negate = makeMultimethod({
@@ -51,7 +51,7 @@ const negate = makeMultimethod({
         type: 'BinaryExpression',
         operator: 'Disjunction',
         left: negate(t.left),
-        right: negate(t.right)
+        right: negate(t.right),
       }
     }
     if (t.operator === 'Disjunction') {
@@ -59,7 +59,7 @@ const negate = makeMultimethod({
         type: 'BinaryExpression',
         operator: 'Conjunction',
         left: negate(t.left),
-        right: negate(t.right)
+        right: negate(t.right),
       }
     }
     if (t.operator === 'Implication') {
@@ -67,25 +67,25 @@ const negate = makeMultimethod({
         type: 'BinaryExpression',
         operator: 'Conjunction',
         left: clone(t.left),
-        right: negate(t.right)
+        right: negate(t.right),
       }
     }
   },
   ExpressionStatement: t => ({
     type: 'ExpressionStatement',
-    expression: negate(t.expression)
+    expression: negate(t.expression),
   }),
   QuantifiedExpression: t => ({
     type: t.type,
     variable: t.variable,
     quantifier: (t.quantifier === 'Universal') ? 'Existential' : 'Universal',
-    expression: negate(t.expression)
+    expression: negate(t.expression),
   }),
-  UnaryExpression: t => t.argument
+  UnaryExpression: t => t.argument,
 }, t => ({
   type: 'UnaryExpression',
   operator: 'Negation',
-  argument: clone(t)
+  argument: clone(t),
 }))
 
 const collapseNegations = makeMultimethod({
@@ -105,7 +105,7 @@ const collapseNegations = makeMultimethod({
     out.expression = collapseNegations(out.expression)
     return out
   },
-  UnaryExpression: t => collapseNegation(t)
+  UnaryExpression: t => collapseNegation(t),
 }, t => {
   if (t.arguments) {
     const out = clone(t)
@@ -145,12 +145,12 @@ const collapseNegation = makeMultimethod({
     } else if (t.argument.type === 'ExpressionStatement') {
       return {
         type: 'ExpressionStatement',
-        expression: negate(t.argument.expression)
+        expression: negate(t.argument.expression),
       }
     } else {
       return clone(t)
     }
-  }
+  },
 }, clone)
 
 const removeExpressionImplications = t => {
@@ -171,7 +171,7 @@ const removeImplications = makeMultimethod({
     return out
   },
   ExpressionStatement: removeExpressionImplications,
-  QuantifiedExpression: removeExpressionImplications
+  QuantifiedExpression: removeExpressionImplications,
 }, clone)
 
 const _collectName = (t, scope = {}) => {
@@ -215,7 +215,7 @@ const collectNames = makeMultimethod({
   },
   VariableOrConstant: (t, scope = {}) => {
     return _collectName(t, scope)
-  }
+  },
 }, (t, names = {}) => names)
 
 const markFree = makeMultimethod({
@@ -246,10 +246,10 @@ const markFree = makeMultimethod({
     t.argument = markFree(t.argument, scope, quantified)
     return t
   },
-  VariableOrConstant: (t, scope = {}, quantified = []) => {
+  VariableOrConstant: (t, _scope, quantified = []) => {
     t.free = !quantified.includes(t.name)
     return t
-  }
+  },
 }, clone)
 
 const containsFree = makeMultimethod({
@@ -284,7 +284,7 @@ const containsFree = makeMultimethod({
   VariableOrConstant: (t, name, quantified = []) => {
     if (t.name !== name) return false
     return (quantified.indexOf(t.name) < 0)
-  }
+  },
 }, () => false)
 
 // Test whether to apply equivalencies in moveQuantifiersLeft
@@ -327,7 +327,7 @@ const moveQuantifiersLeft = makeMultimethod({
       type: 'BinaryExpression',
       operator: o.operator,
       left: (keepLeftWrap ? leftExpr : unwrapExpression(leftExpr)),
-      right: (keepRightWrap ? rightExpr : unwrapExpression(rightExpr))
+      right: (keepRightWrap ? rightExpr : unwrapExpression(rightExpr)),
     }
     const [lastq, lastv] = quantifiers[quantifiers.length - 1]
     for (const [q, v] of quantifiers.reverse()) {
@@ -336,14 +336,14 @@ const moveQuantifiersLeft = makeMultimethod({
         quantifier: q,
         variable: {
           type: 'VariableOrConstant',
-          name: v
+          name: v,
         },
-        expression: out
+        expression: out,
       }
       if ((q === lastq) && (v === lastv)) {
         out.expression = {
           type: 'ExpressionStatement',
-          expression: out.expression
+          expression: out.expression,
         }
       }
     }
@@ -359,7 +359,7 @@ const moveQuantifiersLeft = makeMultimethod({
     out.expression = moveQuantifiersLeft(out.expression)
     if (out.expression.type === 'QuantifiedExpression') out = unwrapExpression(out)
     return out
-  }
+  },
 }, clone)
 
 const rename = makeMultimethod({
@@ -392,7 +392,7 @@ const rename = makeMultimethod({
     scope.push(t.name)
     t.name = scope.check(t.name)
     return t
-  }
+  },
 }, clone)
 
 module.exports = {
@@ -404,5 +404,5 @@ module.exports = {
   moveQuantifiersLeft,
   negate,
   removeImplications,
-  stringify
+  stringify,
 }

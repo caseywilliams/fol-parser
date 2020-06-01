@@ -8,7 +8,7 @@ const booleanToken = (truthy = 1, start = 0, end = 1) => {
     id: (truthy ? 'True' : 'False'),
     type: 'boolean',
     start,
-    end
+    end,
   }
 }
 
@@ -74,7 +74,7 @@ describe('tokenize', () => {
       nameToken('FunctionExpression', 'f', 0, 1),
       operatorToken('LeftParen', 1, 2),
       nameToken('VariableOrConstant', 'x', 2, 3),
-      operatorToken('RightParen', 3, 4)
+      operatorToken('RightParen', 3, 4),
     ])
   })
 

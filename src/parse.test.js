@@ -11,7 +11,7 @@ describe('parse', () => {
       name: 'P',
       start: 0,
       end: 1,
-      arguments: []
+      arguments: [],
     })
   })
 
@@ -25,7 +25,7 @@ describe('parse', () => {
         type: 'VariableOrConstant',
         name: 'x',
         start: 2,
-        end: 3
+        end: 3,
       }, {
         type: 'UnaryExpression',
         operator: 'Negation',
@@ -35,9 +35,9 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'y',
           start: 6,
-          end: 7
-        }
-      }]
+          end: 7,
+        },
+      }],
     })
   })
 
@@ -46,7 +46,7 @@ describe('parse', () => {
       type: 'VariableOrConstant',
       name: 'c',
       start: 0,
-      end: 1
+      end: 1,
     })
   })
 
@@ -55,14 +55,14 @@ describe('parse', () => {
       type: 'Literal',
       value: true,
       start: 0,
-      end: 4
+      end: 4,
     })
 
     expect(parse('False')).toEqual({
       type: 'Literal',
       value: true,
       start: 0,
-      end: 5
+      end: 5,
     })
   })
 
@@ -77,15 +77,15 @@ describe('parse', () => {
         name: 'P',
         start: 0,
         end: 1,
-        arguments: []
+        arguments: [],
       },
       right: {
         type: 'Predicate',
         name: 'Q',
         start: 4,
         end: 5,
-        arguments: []
-      }
+        arguments: [],
+      },
     })
   })
 
@@ -100,8 +100,8 @@ describe('parse', () => {
         name: 'P',
         start: 1,
         end: 2,
-        arguments: []
-      }
+        arguments: [],
+      },
     })
   })
 
@@ -120,16 +120,16 @@ describe('parse', () => {
           name: 'P',
           start: 1,
           end: 2,
-          arguments: []
+          arguments: [],
         },
         right: {
           type: 'Predicate',
           name: 'Q',
           start: 5,
           end: 6,
-          arguments: []
-        }
-      }
+          arguments: [],
+        },
+      },
     })
   })
 
@@ -144,7 +144,7 @@ describe('parse', () => {
         name: 'P',
         start: 0,
         end: 1,
-        arguments: []
+        arguments: [],
       },
       right: {
         type: 'BinaryExpression',
@@ -156,16 +156,16 @@ describe('parse', () => {
           name: 'Q',
           start: 5,
           end: 6,
-          arguments: []
+          arguments: [],
         },
         right: {
           type: 'Predicate',
           name: 'R',
           start: 9,
           end: 10,
-          arguments: []
-        }
-      }
+          arguments: [],
+        },
+      },
     })
   })
 
@@ -189,24 +189,24 @@ describe('parse', () => {
             name: 'P',
             start: 1,
             end: 2,
-            arguments: []
+            arguments: [],
           },
           right: {
             type: 'Predicate',
             name: 'Q',
             start: 6,
             end: 7,
-            arguments: []
-          }
-        }
+            arguments: [],
+          },
+        },
       },
       right: {
         type: 'Predicate',
         name: 'R',
         start: 11,
         end: 12,
-        arguments: []
-      }
+        arguments: [],
+      },
     })
   })
 
@@ -232,8 +232,8 @@ describe('parse', () => {
         type: 'VariableOrConstant',
         name: 'x',
         start: 2,
-        end: 3
-      }]
+        end: 3,
+      }],
     })
   })
 
@@ -247,7 +247,7 @@ describe('parse', () => {
         type: 'VariableOrConstant',
         name: 'x',
         start: 2,
-        end: 3
+        end: 3,
       }, {
         type: 'UnaryExpression',
         operator: 'Negation',
@@ -257,9 +257,9 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'y',
           start: 6,
-          end: 7
-        }
-      }]
+          end: 7,
+        },
+      }],
     })
   })
 
@@ -278,9 +278,9 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'x',
           start: 4,
-          end: 5
-        }]
-      }]
+          end: 5,
+        }],
+      }],
     })
   })
 
@@ -299,7 +299,7 @@ describe('parse', () => {
         type: 'VariableOrConstant',
         name: 'x',
         start: 2,
-        end: 3
+        end: 3,
       },
       expression: {
         type: 'FunctionExpression',
@@ -310,9 +310,9 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'x',
           start: 6,
-          end: 7
-        }]
-      }
+          end: 7,
+        }],
+      },
     })
   })
 
@@ -326,7 +326,7 @@ describe('parse', () => {
         type: 'VariableOrConstant',
         name: 'x',
         start: 2,
-        end: 3
+        end: 3,
       },
       expression: {
         type: 'ExpressionStatement',
@@ -342,17 +342,17 @@ describe('parse', () => {
             name: 'P',
             start: 5,
             end: 6,
-            arguments: []
+            arguments: [],
           },
           right: {
             type: 'Predicate',
             name: 'Q',
             start: 10,
             end: 11,
-            arguments: []
-          }
-        }
-      }
+            arguments: [],
+          },
+        },
+      },
     })
   })
 
@@ -371,7 +371,7 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'x',
           start: 2,
-          end: 3
+          end: 3,
         },
         expression: {
           type: 'FunctionExpression',
@@ -382,9 +382,9 @@ describe('parse', () => {
             type: 'VariableOrConstant',
             name: 'x',
             start: 6,
-            end: 7
-          }]
-        }
+            end: 7,
+          }],
+        },
       },
       right: {
         type: 'FunctionExpression',
@@ -395,9 +395,9 @@ describe('parse', () => {
           type: 'VariableOrConstant',
           name: 'x',
           start: 13,
-          end: 14
-        }]
-      }
+          end: 14,
+        }],
+      },
     })
   })
 })

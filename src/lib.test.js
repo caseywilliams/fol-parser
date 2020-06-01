@@ -23,7 +23,7 @@ describe('lib', () => {
       ['Implication', 'P -> Q'],
       ['ExpressionStatement', '(P)'],
       ['UnaryExpression', '!P'],
-      ['QuantifiedExpression', 'A.x f(x)']
+      ['QuantifiedExpression', 'A.x f(x)'],
     ])('stringify %s', (name, str) => {
       expect(lib.stringify(parse(str))).toEqual(str)
     })
@@ -44,7 +44,7 @@ describe('lib', () => {
       ['Disjunction', 'P | Q', '!P & !Q'],
       ['Implication', 'P -> Q', 'P & !Q'],
       ['Quantifier existential', 'A.x f(x)', 'E.x !f(x)'],
-      ['Quantifier universal', 'E.x f(x)', 'A.x !f(x)']
+      ['Quantifier universal', 'E.x f(x)', 'A.x !f(x)'],
     ])('negate %s', (name, input, output) => {
       expect(negate(input)).toEqual(output)
     })
@@ -86,7 +86,6 @@ describe('lib', () => {
     })
 
     test('Negation collapse collapses both a function/predicate and its arguments', () => {
-      const result = collapseNegations('!!P(!!!f(x), !!g(x))')
       expect(collapseNegations('!!P(!!!f(x), !!g(x))')).toEqual('P(!f(x), g(x))')
     })
 
@@ -150,7 +149,7 @@ describe('lib', () => {
         x: 'VariableOrConstant',
         g: 'FunctionExpression',
         y: 'VariableOrConstant',
-        z: 'VariableOrConstant'
+        z: 'VariableOrConstant',
       })
     })
 
@@ -159,7 +158,7 @@ describe('lib', () => {
         x: 'VariableOrConstant',
         g: 'FunctionExpression',
         y: 'VariableOrConstant',
-        z: 'VariableOrConstant'
+        z: 'VariableOrConstant',
       })
     })
 
@@ -168,27 +167,27 @@ describe('lib', () => {
         f: 'FunctionExpression',
         x: 'VariableOrConstant',
         g: 'FunctionExpression',
-        y: 'VariableOrConstant'
+        y: 'VariableOrConstant',
       })
     })
 
     test('Collect names from quantified expressions', () => {
       expect(collectNames('A.x f(x)')).toEqual({
         x: 'VariableOrConstant',
-        f: 'FunctionExpression'
+        f: 'FunctionExpression',
       })
     })
 
     test('Collect names from expression statements', () => {
       expect(collectNames('(P(x))')).toEqual({
-        x: 'VariableOrConstant'
+        x: 'VariableOrConstant',
       })
     })
 
     test('Collect names from negated expressions', () => {
       expect(collectNames('!f(x)')).toEqual({
         f: 'FunctionExpression',
-        x: 'VariableOrConstant'
+        x: 'VariableOrConstant',
       })
     })
 
@@ -243,43 +242,43 @@ describe('lib', () => {
   describe('moveQuantifiersLeft', () => {
     test('Quantifiers are moved left in binary expressions where appropriate', () => {
       expect(
-        moveQuantifiersLeft('P(y) | A.x Q(x)')
+        moveQuantifiersLeft('P(y) | A.x Q(x)'),
       ).toEqual('A.x (P(y) | Q(x))')
     })
 
     test('Quantifiers are not moved left when the quantified variable appears free at the left of a binary expression', () => {
       expect(
-        moveQuantifiersLeft('P(x) | A.x Q(x)')
+        moveQuantifiersLeft('P(x) | A.x Q(x)'),
       ).toEqual('P(x) | A.x Q(x)')
     })
 
     test('Move quantifiers left with multiple quantifiers', () => {
       expect(
-        moveQuantifiersLeft('A.z h(z) & E.w k(w)')
+        moveQuantifiersLeft('A.z h(z) & E.w k(w)'),
       ).toEqual('A.z E.w (h(z) & k(w))')
 
       expect(
-        moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z)')
+        moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z)'),
       ).toEqual('E.x A.y A.z (f(x) & g(y) | h(z))')
 
       expect(
-        moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z) & E.w k(w)')
+        moveQuantifiersLeft('E.x f(x) & A.y g(y) | A.z h(z) & E.w k(w)'),
       ).toEqual('E.x A.y A.z E.w (f(x) & g(y) | h(z) & k(w))')
     })
 
     test('Move quantifiers left with quantifiers first', () => {
       expect(
-        moveQuantifiersLeft('A.x A.y (f(x, y) | E.z (f(x, z) & f(y, z)))')
+        moveQuantifiersLeft('A.x A.y (f(x, y) | E.z (f(x, z) & f(y, z)))'),
       ).toEqual('A.x A.y E.z (f(x, y) | f(x, z) & f(y, z))')
     })
 
     test('Parens are maintained when appropriate while moving quantifiers left', () => {
       expect(
-        moveQuantifiersLeft('A.z (P(x) & (!Q(z) | E.y R(z, y) | A.w !P(w)))')
+        moveQuantifiersLeft('A.z (P(x) & (!Q(z) | E.y R(z, y) | A.w !P(w)))'),
       ).toEqual('A.z E.y A.w (P(x) & (!Q(z) | R(z, y) | !P(w)))')
 
       expect(
-        moveQuantifiersLeft('A.z ((P(x) | R(x)) & (!Q(z) | E.y R(z, y) | A.w !P(w)))')
+        moveQuantifiersLeft('A.z ((P(x) | R(x)) & (!Q(z) | E.y R(z, y) | A.w !P(w)))'),
       ).toEqual('A.z E.y A.w ((P(x) | R(x)) & (!Q(z) | R(z, y) | !P(w)))')
     })
 

@@ -26,7 +26,7 @@ function Parser () {
     },
     led () {
       throw new Error('Missing operator.')
-    }
+    },
   }
 
   const createSymbol = (id, bp = 0) => {
@@ -66,7 +66,7 @@ function Parser () {
       let e
       advance()
       if (token.id !== 'RightParen') {
-        while (true) {
+        while (true) { // eslint-disable-line no-constant-condition
           e = expression()
           if (!validArgument(e)) throw new Error(`Predicate arguments should be variables, constants, or functions (got ${e.type})`)
           this.end = e.end
@@ -127,7 +127,7 @@ function Parser () {
     let e
     this.end = this.start
     if (token.id !== 'RightParen') {
-      while (true) {
+      while (true) { // eslint-disable-line no-constant-condition
         e = expression()
         if (!validArgument(e)) throw new Error(`Function arguments should be variables, constants, or other functions (got ${e.type})`)
         this.end = e.end
