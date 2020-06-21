@@ -1,13 +1,13 @@
 const lib = require('./lib')
 const parse = require('./parse')
 
-const negate = (s) => lib.stringify(lib.negate(parse(s)))
-const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)))
-const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)))
+const negate = (s) => lib.stringify(lib.negate(parse(s)), 'ascii')
+const collapseNegations = (s) => lib.stringify(lib.collapseNegations(parse(s)), 'ascii')
+const removeImplications = (s) => lib.stringify(lib.removeImplications(parse(s)), 'ascii')
 const collectNames = (s) => lib.collectNames(parse(s))
 const markFree = (s) => lib.markFree(parse(s))
 const containsFree = (s, x) => lib.containsFree(parse(s), x)
-const moveQuantifiersLeft = (s) => lib.stringify(lib.moveQuantifiersLeft(parse(s)))
+const moveQuantifiersLeft = (s) => lib.stringify(lib.moveQuantifiersLeft(parse(s)), 'ascii')
 
 describe('lib', () => {
   describe('stringify', () => {
@@ -18,19 +18,38 @@ describe('lib', () => {
       ['Predicate with arguments', 'P(x, y)'],
       ['FunctionExpression with argument', 'f(x)'],
       ['FunctionExpression with arguments', 'f(x, y)'],
-      ['Conjunction', 'P & Q'],
-      ['Disjunction', 'P | Q'],
-      ['Implication', 'P -> Q'],
+      ['Conjunction', 'P ∧ Q'],
+      ['Disjunction', 'P ∨ Q'],
+      ['Implication', 'P → Q'],
       ['ExpressionStatement', '(P)'],
-      ['UnaryExpression', '!P'],
-      ['QuantifiedExpression', 'A.x f(x)'],
+      ['UnaryExpression', '¬P'],
+      ['QuantifiedExpression, universal', '∀x f(x)'],
+      ['QuantifiedExpression, existential', '∃x f(x)'],
     ])('stringify %s', (name, str) => {
       expect(lib.stringify(parse(str))).toEqual(str)
     })
 
     test('longer expression', () => {
-      const s = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
+      const s = '∃x f(x) ∨ ∀y (¬Q → P(y, z)) ∧ R'
       expect(lib.stringify(parse(s))).toEqual(s)
+    })
+
+    describe('with format = ascii', () => {
+      describe.each([
+        ['Conjunction', 'P & Q'],
+        ['Disjunction', 'P | Q'],
+        ['Implication', 'P -> Q'],
+        ['UnaryExpression', '!P'],
+        ['QuantifiedExpression, universal', 'A.x f(x)'],
+        ['QuantifiedExpression, existential', 'E.x f(x)'],
+      ])('stringify %s', (name, str) => {
+        expect(lib.stringify(parse(str), 'ascii')).toEqual(str)
+      })
+
+      test('longer expression', () => {
+        const str = 'E.x f(x) | A.y (!Q -> P(y, z)) & R'
+        expect(lib.stringify(parse(str), 'ascii')).toEqual(str)
+      })
     })
   })
 
@@ -65,7 +84,7 @@ describe('lib', () => {
       const s = 'A.y P(f(y), z) | !!Q(x) & E.y !!!Q(y) -> (!Q & P)'
       const obj = parse(s)
       lib.negate(obj)
-      expect(lib.stringify(obj)).toEqual(s)
+      expect(lib.stringify(obj, 'ascii')).toEqual(s)
     })
   })
 
@@ -109,7 +128,7 @@ describe('lib', () => {
       const s = '!!!A.y !!!P(!!!f(y), z) | !!!Q(x) & !!E.y !!Q(y) -> !!!(!!!Q & !!P)'
       const obj = parse(s)
       lib.collapseNegations(obj)
-      expect(lib.stringify(obj)).toEqual(s)
+      expect(lib.stringify(obj, 'ascii')).toEqual(s)
     })
   })
 
@@ -138,7 +157,7 @@ describe('lib', () => {
       const s = 'A.x (f(x) -> g(x)) -> P(f(x), y) | (P -> Q)'
       const obj = parse(s)
       lib.removeImplications(obj)
-      expect(lib.stringify(obj)).toEqual(s)
+      expect(lib.stringify(obj, 'ascii')).toEqual(s)
     })
   })
 
@@ -286,7 +305,7 @@ describe('lib', () => {
       const s = 'A.y P(f(y), z) | (E.x !!Q(x) & E.y !!!Q(y) -> A.x f(x))'
       const obj = parse(s)
       lib.moveQuantifiersLeft(obj)
-      expect(lib.stringify(obj)).toEqual(s)
+      expect(lib.stringify(obj, 'ascii')).toEqual(s)
     })
   })
 })

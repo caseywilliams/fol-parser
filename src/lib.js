@@ -1,12 +1,38 @@
 const clone = obj => JSON.parse(JSON.stringify(obj))
 
 const strings = {
-  Conjunction: '&',
-  Disjunction: '|',
-  Implication: '->',
-  Negation: '!',
-  Universal: 'A.',
-  Existential: 'E.',
+  Conjunction: {
+    ascii: '&',
+    utf8: '∧',
+  },
+  Disjunction: {
+    ascii: '|',
+    utf8: '∨',
+  },
+  Implication: {
+    ascii: '->',
+    utf8: '→',
+  },
+  Negation: {
+    ascii: '!',
+    utf8: '¬',
+  },
+  Universal: {
+    ascii: 'A.',
+    utf8: '∀',
+  },
+  Existential: {
+    ascii: 'E.',
+    utf8: '∃',
+  },
+  True: {
+    ascii: '1',
+    utf8: '⊤',
+  },
+  False: {
+    ascii: '0',
+    utf8: '⊥',
+  },
 }
 
 const makeMultimethod = (implementations, defaultImplementation = null) => {
@@ -20,27 +46,31 @@ const makeMultimethod = (implementations, defaultImplementation = null) => {
   })
 }
 
-function unwrapExpression (t) {
-  return (t.type === 'ExpressionStatement' ? t.expression : t)
-}
+const unwrapExpression = (t) => (t.type === 'ExpressionStatement' ? t.expression : t)
 
-const stringifyPredicateOrFunctionExpression = t => {
+const stringifyPredicateOrFunctionExpression = (t, format) => {
   if (t.arguments.length) {
-    const args = t.arguments.map(stringify)
+    const args = t.arguments.map(arg => stringify(arg, format))
     return `${t.name}(${args.join(', ')})`
   }
   return t.name
 }
 
 const stringify = makeMultimethod({
-  BinaryExpression: t =>
-    [stringify(t.left), strings[t.operator], stringify(t.right)].join(' '),
-  ExpressionStatement: t => `(${stringify(t.expression)})`,
+  BinaryExpression: (t, format = 'utf8') => [
+    stringify(t.left, format),
+    strings[t.operator][format],
+    stringify(t.right, format),
+  ].join(' '),
+  ExpressionStatement: (t, format) => `(${stringify(t.expression, format)})`,
   FunctionExpression: stringifyPredicateOrFunctionExpression,
   Predicate: stringifyPredicateOrFunctionExpression,
-  QuantifiedExpression: t =>
-    `${strings[t.quantifier]}${stringify(t.variable)} ${stringify(t.expression)}`,
-  UnaryExpression: t => `${strings[t.operator]}${stringify(t.argument)}`,
+  QuantifiedExpression: (t, format = 'utf8') => [
+    `${strings[t.quantifier][format]}${stringify(t.variable, format)}`,
+    `${stringify(t.expression, format)}`,
+  ].join(' '),
+  UnaryExpression: (t, format = 'utf8') =>
+    `${strings[t.operator][format]}${stringify(t.argument, format)}`,
   VariableOrConstant: t => t.name,
 })
 
